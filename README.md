@@ -1,4 +1,4 @@
-# Cargo-Loading-with-Evolutionary-Algorithms
+# Cargo Loading with Evolutionary Algorithms
 This assessment concerns a cargo container loading problem: We are given a rectangular cargo
 container and a set of cylindrical containers (barrels, drums, tanks) of different sizes and weights. Each
 cylindrical container has a diameter and weight. The problem is to place the cylinders in the container

@@ -1,4 +1,6 @@
-from typing import List, Tuple
+from typing import List
+from math_utils import *
+from math import radians
 import random
 
 random.seed(42)
@@ -66,7 +68,7 @@ class Population:
         self.__cylinders = [Individual(CYLINDER_SIDES, diameter / 2, weight) for weight, diameter in random.choices(CYLINDERS, k=num_cylinders)]
 
         # Sorts the cylinders in descending order based on size (radius)
-        self.__cylinders = sorted(self.__cylinders, reverse=True, key=lambda x: x.radius)
+        self.__cylinders = sorted(self.__cylinders, reverse=True, key=lambda x: x.weight)
 
         # Sets the first cylinder's centre to the middle of the container.
         self.__cylinders[0].centre = (CONTAINER_WIDTH / 2, CONTAINER_HEIGHT / 2)
@@ -111,13 +113,27 @@ class Population:
             return -1
 
         # -- Geometric -- #
-        # Adjust centre of cylinder based on the position number.
+        # - Adjust centre of cylinder based on the position number - #
+
+        # Get the cylinder corresponding to the position
+        target_cylinder = self.__cylinders[position // self.__cylinder_sides]
+
+        # Preset the point to the right position of the target cylinder such that both cylinders touch one another
+        positioned_point = (target_cylinder.centre[0] + target_cylinder.radius + cylinder.radius, target_cylinder.centre[1])
+
+        # Rotate the positioned point by a radian amount defined by the side number multiplied by the distance between each side.
+        cylinder.centre = rotate(
+            target_cylinder.centre,
+            positioned_point,
+            radians((position % self.__cylinder_sides) * (360 / self.__cylinder_sides))
+        )
 
         # - Container-based - #
+        # Check if cylinder fits within the container based on its current position.
 
 
         # - Neighbour-based - #
-
+        # Check if the cylinder intersects with another.
 
 
         return 0
