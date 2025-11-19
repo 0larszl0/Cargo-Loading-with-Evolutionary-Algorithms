@@ -1,6 +1,6 @@
 from typing import List
 from math_utils import *
-from math import radians
+from math import radians, dist
 import random
 
 random.seed(42)
@@ -45,6 +45,18 @@ class Individual:
     @property
     def weight(self) -> int:
         return self.__weight
+
+    def left(self) -> float:
+        return self.__centre[0] - self.__radius
+
+    def right(self) -> float:
+        return self.__centre[0] + self.__radius
+
+    def top(self) -> float:
+        return self.__centre[1] + self.__radius
+
+    def bottom(self) -> float:
+        return self.__centre[1] - self.__radius
 
 
 class Population:
@@ -96,8 +108,9 @@ class Population:
         """
 
         for i, position in enumerate(positions):
-            if position > i * 8:
-                ...
+            # Check if the position number is greater than the maximum position number for the ith circle being seen.
+            if position > (i + 1) * self.__cylinder_sides:
+                self.check_feasibility(1, self.__cylinders[i])
 
     def check_feasibility(self, position: int, cylinder: Individual) -> int:
         """
@@ -107,6 +120,8 @@ class Population:
         :return: int, A feasible position. This would be the passed argument if it succeeded, or -1 if the cylinder
         should be discarded.
         """
+
+        # Recursion?
 
         # -- Weight -- #
         if cylinder.weight + self.__weight > self.__max_weight:
@@ -130,13 +145,17 @@ class Population:
 
         # - Container-based - #
         # Check if cylinder fits within the container based on its current position.
-
+        if (cylinder.left() < 0 or cylinder.right() > CONTAINER_WIDTH) or \
+                (cylinder.bottom() < 0 or cylinder.top() > CONTAINER_HEIGHT):
+            ...  # in the case it's not fully in the container, move to the next position
 
         # - Neighbour-based - #
-        # Check if the cylinder intersects with another.
+        # Check if the cylinder intersects in more than one places with another.
+        for individual in self.__cylinders:
+            if (individual != cylinder) and (dist(individual.centre, cylinder.centre) < individual.radius + cylinder.radius):
+                ...  # individual intersects! Therefore need to find another position
 
-
-        return 0
+        return position
 
 
 
