@@ -20,5 +20,18 @@ def rotate(origin: Tuple[float, float], point: Tuple[float, float], angle: float
     )
 
 
+def cprint(condition: bool, *args, **kwargs) -> None:
+    """
+    Prints on a condition
+    :param bool condition: The condition
+    :param args: Arguments of builtin print
+    :param kwargs: The specified kwargs of builtin print.
+    :return: None
+    """
+    if condition:
+        print(*args, **kwargs)
+
+
 if __name__ == "__main__":
     print(rotate((0, 0), (5, 5), radians(90)))  # radians multiples pi/180 to the deg value.
+    cprint(False, "Hello World")
