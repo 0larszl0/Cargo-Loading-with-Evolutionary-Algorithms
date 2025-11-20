@@ -22,6 +22,9 @@ CYLINDERS = [
 ]
 
 
+# What if the max weight is smaller than the first cylinder...? Need to change something for that.
+
+
 class Cylinder:
     """Represents a cylinder of a particular type."""
 
@@ -70,7 +73,7 @@ class CylinderGroup:
         self.__cylinder_sides = cylinder_sides
         self.__max_weight = max_weight
 
-        self.__weight = 0
+        self.__weight = cylinders[0].weight
 
         # A group will contain a list of random position numbers for each cylinder, apart from the first as that is
         # to be placed in the centre of the container.
@@ -105,13 +108,19 @@ class CylinderGroup:
             self.__group[i] = self.check_feasibility(self.__group[i], self.__cylinders[i + 1], max_positions, max_positions, debug)
             cprint(debug, f"Final position: {self.__group[i]}, with position: {self.__cylinders[i + 1].centre}\n")
 
+            if self.__group[i] != -1:
+                self.__weight += self.__cylinders[i + 1].weight
+
         print(self.__group)
 
         # --- Filter any -1 positions and any cylinders at those positions --- #
-        # 1. Zip the group and the cylinders together
+        # 1. Zip the group and all the cylinders (apart from the first) together
         # 2. Filter out any pair that has a -1 position number
         # 3. Unpair the results, and assign appropriately
-        self.__group, self.__cylinders = zip(*filter(lambda x: x[0] != -1, zip(self.__group, self.__cylinders)))
+        self.__group, cylinders = zip(*filter(lambda x: x[0] != -1, zip(self.__group, self.__cylinders[1:])))
+
+        # 4. Add the first cylinder back and add the filtered cylinders after it.
+        self.__cylinders = [self.__cylinders[0]] + list(cylinders)
 
     def check_feasibility(self, position: int, cylinder: Cylinder, total_positions: int, positions_left: int, debug: bool = False) -> int:
         """
@@ -179,6 +188,16 @@ class CylinderGroup:
 
         return position
 
+    def com(self) -> Tuple[float, float]:
+        """
+        Calculate the groups centre of mass (COM) in each axis.
+        :return: Tuple[float]
+        """
+        # Get a list of masses multiplied by their axis (MMA)
+        mma_x, mma_y = zip(*[(cylinder.weight * cylinder.centre[0], cylinder.weight * cylinder.centre[1]) for cylinder in self.__cylinders])
+
+        return sum(mma_x) / self.__weight, sum(mma_y) / self.__weight
+
     def visualise(self, lenience: float = .6) -> None:
         """
         Sketches the cylinders within this group in their appropriate locations.
@@ -221,12 +240,16 @@ class CylinderGroup:
         # Mark centre of container
         ax.plot(CONTAINER_WIDTH / 2, CONTAINER_HEIGHT / 2, 'x', color='#F4BA02', markersize=6, markeredgewidth=3, label='Origin')
 
+        # Mark the group's centre of mass.
+        x_com, y_com = self.com()
+        ax.plot(x_com, y_com, 'x', color="#E21F4A", markersize=6, markeredgewidth=3, label="Center of Mass")
+
         # - Set up axis - #
         ax.set_aspect("equal")
         ax.set_xlim(0, CONTAINER_WIDTH)
         ax.set_ylim(0, CONTAINER_HEIGHT)
 
-        ax.grid(True, alpha=.3, color="#F7F8F9")
+        ax.grid(True, alpha=.15, color="#F7F8F9")
         ax.spines[:].set_color("#F7F8F9")
         ax.tick_params(colors="#F7F8F9")
         ax.set_facecolor("#01364C")
@@ -284,5 +307,5 @@ class Population:
 
 
 if __name__ == "__main__":
-    population = Population(50, 5, .1, 100, CYLINDER_SIDES, 5000)
+    population = Population(50, 5, .1, 100, CYLINDER_SIDES, 10_000)
     population.evolve()
