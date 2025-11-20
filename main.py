@@ -1,6 +1,8 @@
+from matplotlib.patches import Circle, Rectangle, FancyArrowPatch, ArrowStyle
+import matplotlib.pyplot as plt
 from typing import List
+from math import dist
 from utils import *
-from math import radians, dist
 import random
 
 random.seed(42)
@@ -74,6 +76,16 @@ class CylinderGroup:
         # to be placed in the centre of the container.
         self.__group = random.sample(range(num_cylinders * cylinder_sides), k=num_cylinders - 1)
 
+    def recycle(self, cylinders: List[Cylinder], grouping: List[int]) -> None:
+        """
+        Reuses the cylinder group by resetting several properties like weight and to contain a new grouping.
+        :param List[Cylinder] cylinders: The original cylinder list, this is in case that some cylinders were previously
+        removed during the decoding process.
+        :param List[int] grouping: The new group this group will contain.
+        :return: None
+        """
+        ...
+
     def decode(self, debug: bool = False) -> None:
         """
         Decodes the position numbers within the group.
@@ -95,8 +107,11 @@ class CylinderGroup:
 
         print(self.__group)
 
-        # --- Filter any -1 positions --- #
-
+        # --- Filter any -1 positions and any cylinders at those positions --- #
+        # 1. Zip the group and the cylinders together
+        # 2. Filter out any pair that has a -1 position number
+        # 3. Unpair the results, and assign appropriately
+        self.__group, self.__cylinders = zip(*filter(lambda x: x[0] != -1, zip(self.__group, self.__cylinders)))
 
     def check_feasibility(self, position: int, cylinder: Cylinder, total_positions: int, positions_left: int, debug: bool = False) -> int:
         """
@@ -164,6 +179,64 @@ class CylinderGroup:
 
         return position
 
+    def visualise(self, lenience: float = .6) -> None:
+        """
+        Sketches the cylinders within this group in their appropriate locations.
+        :param float lenience: The size of the region of acceptance for the overall groups centre of mass. This is to
+        visually show whether the group meets the weight distribution criteria.
+        :return: None
+        """
+        # The Figure itself will display as the container.
+        fig, ax = plt.subplots(figsize=(10, 10))
+
+        # Draw weight distribution container (central container -> cc)
+        cc_width, cc_height = CONTAINER_WIDTH * lenience, CONTAINER_HEIGHT * lenience
+        container_pos = ((CONTAINER_WIDTH - cc_width) / 2, (CONTAINER_HEIGHT - cc_height) / 2)
+        container = Rectangle(container_pos, cc_width, cc_height,
+                              fill=False, edgecolor="#F4BA02", linewidth=2, linestyle="--", label="Central container")
+        ax.add_patch(container)
+
+        # Plot each cylinder and their details
+        for cylinder in self.__cylinders:
+            # Plot the circle representing a cylinder.
+            cylinder_patch = Circle(cylinder.centre, cylinder.radius, fill=False, edgecolor="#99D9DD", linewidth=2)
+            ax.add_patch(cylinder_patch)
+
+            # Plot a <-> arrow to signify diameter.
+            arrow_style = ArrowStyle.CurveAB(head_length=cylinder.radius * 4, head_width=cylinder.radius * 1.6)
+            arrow_patch = FancyArrowPatch((cylinder.left(), cylinder.centre[1]), (cylinder.right(), cylinder.centre[1]),
+                                          arrowstyle=arrow_style, color="#AFD8DB", alpha=.4)
+            ax.add_patch(arrow_patch)
+
+            # Plot cylinder info like diameter and weight
+            ax.text(cylinder.centre[0], cylinder.centre[1] + (cylinder.radius * .35), f"{cylinder.radius * 2}Ø",
+                    ha="center", va="center", color="#F7F8F9", fontsize=8 * cylinder.radius)
+
+            ax.text(cylinder.centre[0], cylinder.centre[1] - (cylinder.radius * .35), f"{cylinder.weight}kg",
+                    ha="center", va="center", color="#F7F8F9", fontsize=8 * cylinder.radius)
+
+            # Plot the centre of the drawn cylinder
+            ax.plot(cylinder.centre[0], cylinder.centre[1], 'o', color="#99D9DD", markersize=4)
+
+        # Mark centre of container
+        ax.plot(CONTAINER_WIDTH / 2, CONTAINER_HEIGHT / 2, 'x', color='#F4BA02', markersize=6, markeredgewidth=3, label='Origin')
+
+        # - Set up axis - #
+        ax.set_aspect("equal")
+        ax.set_xlim(0, CONTAINER_WIDTH)
+        ax.set_ylim(0, CONTAINER_HEIGHT)
+
+        ax.grid(True, alpha=.3, color="#F7F8F9")
+        ax.spines[:].set_color("#F7F8F9")
+        ax.tick_params(colors="#F7F8F9")
+        ax.set_facecolor("#01364C")
+
+        # ax.set_title("")
+        ax.legend(loc='upper right', facecolor='#01364C', edgecolor='#F7F8F9', labelcolor='#F7F8F9', framealpha=0.9)
+
+        fig.patch.set_facecolor("#01364C")
+        plt.show()
+
 
 class Population:
     """Manages a population of individuals and evolutionary operations inside a container."""
@@ -201,6 +274,7 @@ class Population:
         """
         for i, cylinder_group in enumerate(self.__population):
             cylinder_group.decode(i == 0)
+            cylinder_group.visualise()
             break
 
     def evolve(self):
