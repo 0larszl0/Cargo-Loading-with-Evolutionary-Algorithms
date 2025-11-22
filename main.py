@@ -22,9 +22,6 @@ CYLINDERS = [
 ]
 
 
-# What if the max weight is smaller than the first cylinder...? Need to change something for that.
-
-
 class Cylinder:
     """Represents a cylinder of a particular type."""
 
@@ -74,6 +71,7 @@ class CylinderGroup:
         self.__max_weight = max_weight
 
         self.__weight = cylinders[0].weight
+        self.__generation = 0
 
         # A group will contain a list of random position numbers for each cylinder, apart from the first as that is
         # to be placed in the centre of the container.
@@ -87,6 +85,7 @@ class CylinderGroup:
         :param List[int] grouping: The new group this group will contain.
         :return: None
         """
+        # Increment internal generation in here
         ...
 
     def decode(self, debug: bool = False) -> None:
@@ -110,17 +109,25 @@ class CylinderGroup:
 
             if self.__group[i] != -1:
                 self.__weight += self.__cylinders[i + 1].weight
+                continue
+
+            # reduce the number of cylinders if a position had failed.
+            self.__num_cylinders -= 1
 
         print(self.__group)
 
         # --- Filter any -1 positions and any cylinders at those positions --- #
         # 1. Zip the group and all the cylinders (apart from the first) together
         # 2. Filter out any pair that has a -1 position number
-        # 3. Unpair the results, and assign appropriately
-        self.__group, cylinders = zip(*filter(lambda x: x[0] != -1, zip(self.__group, self.__cylinders[1:])))
+        filtered_pairs = list(filter(lambda x: x[0] != -1, zip(self.__group, self.__cylinders[1:])))
 
-        # 4. Add the first cylinder back and add the filtered cylinders after it.
-        self.__cylinders = [self.__cylinders[0]] + list(cylinders)
+        self.__group, self.__cylinders = [], self.__cylinders[:1]  # set values in case there are no successful pairs
+        if filtered_pairs:  # check if there are successful pairs
+            # 2a. Unpair the results, convert them to lists, and assign appropriately
+            self.__group, filtered_cylinders = map(lambda x: list(x), zip(*filtered_pairs))
+
+            # 2b. Add the filtered cylinders after it.
+            self.__cylinders += filtered_cylinders
 
     def check_feasibility(self, position: int, cylinder: Cylinder, total_positions: int, positions_left: int, debug: bool = False) -> int:
         """
@@ -190,7 +197,7 @@ class CylinderGroup:
 
     def com(self) -> Tuple[float, float]:
         """
-        Calculate the groups centre of mass (COM) in each axis.
+        Calculate the group's centre of mass (COM) in each axis.
         :return: Tuple[float]
         """
         # Get a list of masses multiplied by their axis (MMA)
@@ -210,10 +217,10 @@ class CylinderGroup:
 
         # Draw weight distribution container (central container -> cc)
         cc_width, cc_height = CONTAINER_WIDTH * lenience, CONTAINER_HEIGHT * lenience
-        container_pos = ((CONTAINER_WIDTH - cc_width) / 2, (CONTAINER_HEIGHT - cc_height) / 2)
-        container = Rectangle(container_pos, cc_width, cc_height,
+        cc_pos = ((CONTAINER_WIDTH - cc_width) / 2, (CONTAINER_HEIGHT - cc_height) / 2)
+        cc = Rectangle(cc_pos, cc_width, cc_height,
                               fill=False, edgecolor="#F4BA02", linewidth=2, linestyle="--", label="Central container")
-        ax.add_patch(container)
+        ax.add_patch(cc)
 
         # Plot each cylinder and their details
         for cylinder in self.__cylinders:
@@ -238,11 +245,12 @@ class CylinderGroup:
             ax.plot(cylinder.centre[0], cylinder.centre[1], 'o', color="#99D9DD", markersize=4)
 
         # Mark centre of container
-        ax.plot(CONTAINER_WIDTH / 2, CONTAINER_HEIGHT / 2, 'x', color='#F4BA02', markersize=6, markeredgewidth=3, label='Origin')
+        centre_x, centre_y = CONTAINER_WIDTH / 2, CONTAINER_HEIGHT / 2
+        ax.plot(centre_x, centre_y, 'x', color='#F4BA02', markersize=6, markeredgewidth=3, label='Origin')
 
         # Mark the group's centre of mass.
         x_com, y_com = self.com()
-        ax.plot(x_com, y_com, 'x', color="#E21F4A", markersize=6, markeredgewidth=3, label="Center of Mass")
+        ax.plot(x_com, y_com, 'x', color="#E21F4A", markersize=6, markeredgewidth=3, label="Centre of Mass")
 
         # - Set up axis - #
         ax.set_aspect("equal")
@@ -254,7 +262,12 @@ class CylinderGroup:
         ax.tick_params(colors="#F7F8F9")
         ax.set_facecolor("#01364C")
 
-        # ax.set_title("")
+        ax.set_title(
+            f"Optimised solution for {self.__num_cylinders} cylinder{'s' if self.__num_cylinders > 1 else ''} at generation {self.__generation}\n"
+            f"Distance between packed COM and container centre: {dist((x_com, y_com), (centre_x, centre_y)):.3f}\n"
+            f"Packed weight: {self.__weight}/{self.__max_weight}",
+            color="#F7F8F9", fontsize=14, pad=20, weight="bold"
+        )
         ax.legend(loc='upper right', facecolor='#01364C', edgecolor='#F7F8F9', labelcolor='#F7F8F9', framealpha=0.9)
 
         fig.patch.set_facecolor("#01364C")
@@ -278,6 +291,14 @@ class Population:
 
         # Sorts the cylinders in descending order based on size (radius)
         self.__cylinders = sorted(self.__cylinders, reverse=True, key=lambda x: x.weight)
+
+        # Drop all large cylinders that already exceed the maximum weight
+        while self.__cylinders and self.__cylinders[0].weight > max_weight:
+            del self.__cylinders[0]
+            num_cylinders -= 1
+
+        if not self.__cylinders:
+            raise Exception(f"\r\033[1m\033[31mCustom Exception: No cylinder can be packed with a maximum weight limit of: {max_weight}")
 
         # Sets the first cylinder's centre to the middle of the container.
         self.__cylinders[0].centre = (CONTAINER_WIDTH / 2, CONTAINER_HEIGHT / 2)
@@ -307,5 +328,5 @@ class Population:
 
 
 if __name__ == "__main__":
-    population = Population(50, 5, .1, 100, CYLINDER_SIDES, 10_000)
+    population = Population(50, 5, .1, 100, CYLINDER_SIDES, 400)
     population.evolve()
