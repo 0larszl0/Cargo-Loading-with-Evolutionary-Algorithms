@@ -60,6 +60,8 @@ class Cylinder:
     def bottom(self) -> float:
         return self.__centre[1] - self.__radius
 
+    # add __str__() ??
+
 
 class CylinderGroup:
     """Contains cylinders in a particular grouping."""
@@ -103,7 +105,7 @@ class CylinderGroup:
                 # if it is reset the position number to 0
                 self.__group[i] = 0
 
-            cprint(debug, f"+----\tWorking on cylinder: {i + 1}/{self.__num_cylinders - 1}\t----+")
+            cprint(debug, f"+----\tWorking on cylinder: {i + 1}\t----+")
             self.__group[i] = self.check_feasibility(self.__group[i], self.__cylinders[i + 1], max_positions, max_positions, debug)
             cprint(debug, f"Final position: {self.__group[i]}, with position: {self.__cylinders[i + 1].centre}\n")
 
@@ -113,8 +115,6 @@ class CylinderGroup:
 
             # reduce the number of cylinders if a position had failed.
             self.__num_cylinders -= 1
-
-        print(self.__group)
 
         # --- Filter any -1 positions and any cylinders at those positions --- #
         # 1. Zip the group and all the cylinders (apart from the first) together
@@ -128,6 +128,8 @@ class CylinderGroup:
 
             # 2b. Add the filtered cylinders after it.
             self.__cylinders += filtered_cylinders
+
+        cprint(debug, f"{'-'*40}\nDecoded group: {self.__group}\nRemaining cylinders: {self.__cylinders}")
 
     def check_feasibility(self, position: int, cylinder: Cylinder, total_positions: int, positions_left: int, debug: bool = False) -> int:
         """
@@ -205,6 +207,18 @@ class CylinderGroup:
 
         return sum(mma_x) / self.__weight, sum(mma_y) / self.__weight
 
+    def fitness(self) -> float:
+        """
+        The fitness is the inverse of the distance between the COM and the centre of the container.
+        (shorter distance = higher fitness)
+        :return: -> float
+        """
+        distance = dist(self.com(), (CONTAINER_WIDTH / 2, CONTAINER_HEIGHT / 2))
+        if distance == 0:  # if the packed COM is at the centre of the container.
+            return float("inf")
+
+        return 1. / distance
+
     def visualise(self, lenience: float = .6) -> None:
         """
         Sketches the cylinders within this group in their appropriate locations.
@@ -245,8 +259,7 @@ class CylinderGroup:
             ax.plot(cylinder.centre[0], cylinder.centre[1], 'o', color="#99D9DD", markersize=4)
 
         # Mark centre of container
-        centre_x, centre_y = CONTAINER_WIDTH / 2, CONTAINER_HEIGHT / 2
-        ax.plot(centre_x, centre_y, 'x', color='#F4BA02', markersize=6, markeredgewidth=3, label='Origin')
+        ax.plot(CONTAINER_WIDTH / 2, CONTAINER_HEIGHT / 2, 'x', color='#F4BA02', markersize=6, markeredgewidth=3, label='Origin')
 
         # Mark the group's centre of mass.
         x_com, y_com = self.com()
@@ -264,7 +277,7 @@ class CylinderGroup:
 
         ax.set_title(
             f"Optimised solution for {self.__num_cylinders} cylinder{'s' if self.__num_cylinders > 1 else ''} at generation {self.__generation}\n"
-            f"Distance between packed COM and container centre: {dist((x_com, y_com), (centre_x, centre_y)):.3f}\n"
+            f"Distance between packed COM and container centre: {1./self.fitness():.3f}\n"
             f"Packed weight: {self.__weight}/{self.__max_weight}",
             color="#F7F8F9", fontsize=14, pad=20, weight="bold"
         )
@@ -284,6 +297,7 @@ class Population:
         self.__max_generations = max_generations
 
         self.__generations = 0
+        self.__best_group: CylinderGroup | None = None
 
         # - Initialise cylinders - #
         # Get a random selection of different cylinder types and save them as objects
@@ -311,22 +325,42 @@ class Population:
         self.__population = [CylinderGroup(self.__cylinders, num_cylinders, cylinder_sides, max_weight) for _ in range(size)]
         print(f"\nSample of population: {random.sample(self.__population, k=3)}\n")
 
-    def decode(self) -> None:
+    def tournament_selection(self, k: int = 3) -> CylinderGroup:
         """
-        Decodes the population to ensure each group of cylinders is grouped feasibly.
+        Select a cylinder group using tournament selection.
+        :param int k: The size of the selection.
+        :return: CylinderGroup
+        """
+        # Randomly select k cylinder groups and return the one with the highest fitness
+        return max(random.sample(self.__population, k), key=lambda x: x.fitness())
+
+    def evolve(self) -> None:
+        """
+        Run a single generation of the genetic algorithm.
         :return: None
         """
+        # - Decode each position string in each group - #
         for i, cylinder_group in enumerate(self.__population):
             cylinder_group.decode(i == 0)
-            cylinder_group.visualise()
-            break
 
-    def evolve(self):
-        """Run a single generation of the genetic algorithm."""
-        self.decode()
+        # - Track the best packing - #
+        self.__best_group = max(self.__population, key=lambda x: x.fitness())
+
+        # - Create new population - #
+
+
+    def run_ga(self) -> None:
+        """
+        Runs the genetic algorithm for the cargo loading problem provided.
+        :return: None
+        """
+        self.evolve()
+
+        if self.__generations % 10 == 0:
+            self.__best_group.visualise()
 
 
 
 if __name__ == "__main__":
-    population = Population(50, 5, .1, 100, CYLINDER_SIDES, 400)
-    population.evolve()
+    population = Population(50, 5, .1, 100, CYLINDER_SIDES, 3400)
+    population.run_ga()
