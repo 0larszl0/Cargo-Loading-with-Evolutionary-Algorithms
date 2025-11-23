@@ -66,6 +66,10 @@ class CylinderGroup:
         # to be placed in the centre of the container.
         self.__group = random.sample(range(num_cylinders * cylinder_sides), k=num_cylinders - 1)
 
+    @property
+    def group(self):
+        return self.__group
+
     def recycle(self, cylinders: List[Cylinder], grouping: List[int]) -> None:
         """
         Reuses the cylinder group by resetting several properties like weight and to contain a new grouping.
