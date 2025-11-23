@@ -1,5 +1,4 @@
 from cylinders import Cylinder, CylinderGroup, CYLINDER_SIDES, CYLINDERS
-from config import CONTAINER_WIDTH, CONTAINER_HEIGHT
 from typing import List
 import random
 
@@ -13,6 +12,10 @@ class Bin:
     @property
     def cylinders(self) -> List[Cylinder]:
         return self.__cylinders
+
+    @property
+    def weight(self) -> int:
+        return self.__weight
 
     def size(self) -> int:
         return len(self.__cylinders)
@@ -56,21 +59,20 @@ class Bins:
         self.__bins.append(Bin(self.__max_weight))
         self.__bins[-1].add(cylinder)
 
+
 class Population:
     """Manages a population of individuals and evolutionary operations inside a container."""
 
-    def __init__(self, size: int, num_cylinders: int, mutation_rate: float, max_generations: int, cylinder_sides: int,
-                 max_weight):
+    def __init__(self, size: int, num_cylinders: int, mutation_rate: float, cylinder_sides: int, max_weight):
         self.__size = size
         self.__mutation_rate = mutation_rate
-        self.__max_generations = max_generations
         self.__cylinder_sides = cylinder_sides
         self.__max_weight = max_weight
         self.__population = []
         self.__bins = Bins(max_weight)
 
         self.__generations = 0
-        self.__best_group: CylinderGroup | None = None
+        self.__best_cylinder_group: CylinderGroup | None = None
 
         # - Initialise cylinders - #
         # Get a random selection of different cylinder types and save them as objects
@@ -79,12 +81,13 @@ class Population:
         # Sorts the cylinders in descending order based on size (radius)
         self.__cylinders = sorted(self.__cylinders, reverse=True, key=lambda x: x.weight)
 
-        # Sets the first cylinder's centre to the middle of the container.
-        self.__cylinders[0].centre = (CONTAINER_WIDTH / 2, CONTAINER_HEIGHT / 2)
-
         print("+-----------\tInitialised cylinders\t-----------+")
         for i, cylinder in enumerate(self.__cylinders):
             print(f"Cylinder {i+1}:\t- Weight: {cylinder.weight}\t- Centre: {cylinder.centre}\t- Radius: {cylinder.radius}")
+
+    @property
+    def best_cylinder_group(self) -> CylinderGroup:
+        return self.__best_cylinder_group
 
     def bin_cylinders(self) -> None:
         """
@@ -94,21 +97,31 @@ class Population:
         for cylinder in self.__cylinders:
             self.__bins.pack_cylinder_ff(cylinder)
 
-        if not self.__bins.bins[0].cylinders:  # if no cylinders was able to be packed.
+        if not self.__bins.bins[0].cylinders:  # if no cylinders could be packed.
             raise Exception(f"\r\033[1m\033[31mCustom Exception: No cylinder can be packed with a maximum weight limit of: {self.__max_weight}")
 
     def generate_groups(self, bin_focus: int = 0) -> None:
         """
         Generates the initial groups, containing random position strings, for the population.
-        :param int bin_focus: The bin to focus the packing onto.
+        :param int bin_focus: The bin of cylinders to focus on.
         :return: None
         """
         focussed_bin = self.__bins.bins[bin_focus]
 
+        # Need to create clones of each Cylinder, instead of taking focussed_bin's cylinder as it will take a reference
+        # of each class, thus essentially sharing the same cylinder's amongst each group, instead of having their own.
         self.__population = [
-            CylinderGroup(focussed_bin.cylinders, focussed_bin.size(), self.__cylinder_sides) for _ in range(self.__size)
+            CylinderGroup(
+                [Cylinder(CYLINDER_SIDES, cylinder.radius, cylinder.weight) for cylinder in focussed_bin.cylinders],
+                focussed_bin.size(), self.__cylinder_sides, focussed_bin.weight
+            ) for _ in range(self.__size)
         ]
         print(f"\nSample of population: {random.sample(self.__population, k=3)}\n")
+
+        self.__best_cylinder_group = CylinderGroup(
+            [Cylinder(CYLINDER_SIDES, cylinder.radius, cylinder.weight) for cylinder in focussed_bin.cylinders],
+            focussed_bin.size(), self.__cylinder_sides, focussed_bin.weight
+        )
 
     def tournament_selection(self, k: int = 3) -> CylinderGroup:
         """
@@ -150,17 +163,27 @@ class Population:
 
         return group
 
-    def evolve(self) -> None:
+    def evolve(self, bin_focus: int = 0) -> None:
         """
         Run a single generation of the genetic algorithm.
+        :param int bin_focus: The bin of cylinders to focus on.
         :return: None
         """
         # - Decode each position string in each group - #
         for i, cylinder_group in enumerate(self.__population):
-            cylinder_group.decode(i == 0)
+            cylinder_group.decode()
 
         # - Track the best packing - #
-        self.__best_group = max(self.__population, key=lambda x: x.fitness())
+        # Get the best cylinder group in the current generation.
+        best_cylinder_group_gen = max(self.__population, key=lambda x: x.fitness())
+
+        # Check whether a best cylinder group exists or if the best generation group outperforms any previous group.
+        print(best_cylinder_group_gen.fitness(), "---", self.__best_cylinder_group.fitness())
+        if best_cylinder_group_gen.fitness() > self.__best_cylinder_group.fitness():
+            # The valuable part of a group is the positions composing each cylinder in that group
+            # As a result we duplicate those centres and apply them to the best cylinder group variable.
+            for i, cylinder in enumerate(best_cylinder_group_gen.cylinders):
+                self.__best_cylinder_group.cylinders[i].centre = cylinder.centre
 
         # - Create new population - #
         # Use the recycling method within existing cylinder groups to avoid creating many objects that will be unused.
@@ -173,5 +196,8 @@ class Population:
             ) for _ in range(self.__size)
         ]
 
-        # for group in self.__population:
-        #     group.recycle(self.__)
+        for i, group in enumerate(self.__population):
+            group.recycle(
+                [Cylinder(CYLINDER_SIDES, cylinder.radius, cylinder.weight) for cylinder in self.__bins.bins[bin_focus].cylinders],
+                next_groups[i]
+            )

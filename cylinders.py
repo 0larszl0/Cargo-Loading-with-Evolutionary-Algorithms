@@ -53,13 +53,15 @@ class Cylinder:
 class CylinderGroup:
     """Contains cylinders in a particular grouping."""
 
-    def __init__(self, cylinders: List[Cylinder], num_cylinders: int, cylinder_sides: int, max_weight: int):
+    def __init__(self, cylinders: List[Cylinder], num_cylinders: int, cylinder_sides: int, bin_weight: int):
         self.__cylinders = cylinders
         self.__num_cylinders = num_cylinders
         self.__cylinder_sides = cylinder_sides
-        self.__max_weight = max_weight
 
-        self.__weight = cylinders[0].weight
+        # Sets the first cylinder's centre to the middle of the container.
+        self.__cylinders[0].centre = (CONTAINER_WIDTH / 2, CONTAINER_HEIGHT / 2)
+
+        self.__weight = bin_weight
         self.__generation = 0  # Used primarily for the visualisation title
 
         # A group will contain a list of random position numbers for each cylinder, apart from the first as that is
@@ -67,21 +69,29 @@ class CylinderGroup:
         self.__group = random.sample(range(num_cylinders * cylinder_sides), k=num_cylinders - 1)
 
     @property
-    def group(self):
+    def cylinders(self) -> List[Cylinder]:
+        return self.__cylinders
+
+    @cylinders.setter
+    def cylinders(self, updated_cylinders: List[Cylinder]):
+        self.__cylinders = updated_cylinders
+
+    @property
+    def group(self) -> List[int]:
         return self.__group
 
     def recycle(self, cylinders: List[Cylinder], grouping: List[int]) -> None:
         """
-        Reuses the cylinder group by resetting several properties like weight and to contain a new grouping.
+        Reuses the cylinder group by updating the group value and resetting the cylinders in the group.
         :param List[Cylinder] cylinders: The original cylinder list, this is in case that some cylinders were previously
-        removed during the decoding process.
+        removed during the last decoding process.
         :param List[int] grouping: The new group this group will contain.
         :return: None
         """
         self.__cylinders = cylinders  # reset cylinders as last group might've filtered some out.
-        self.__weight = 0
-
         self.__group = grouping  # new group of patterns that have been produced.
+
+        self.__cylinders[0].centre = (CONTAINER_WIDTH / 2, CONTAINER_HEIGHT / 2)
 
         # Increment internal generation in here, as this function will always be called when creating a new population.
         self.__generation += 1
@@ -105,12 +115,9 @@ class CylinderGroup:
             self.__group[i] = self.check_feasibility(self.__group[i], self.__cylinders[i + 1], max_positions, max_positions, debug)
             cprint(debug, f"Final position: {self.__group[i]}, with position: {self.__cylinders[i + 1].centre}\n")
 
-            if self.__group[i] != -1:
-                self.__weight += self.__cylinders[i + 1].weight
-                continue
-
-            # reduce the number of cylinders if a position had failed.
-            self.__num_cylinders -= 1
+            if self.__group[i] == -1:
+                # reduce the number of cylinders if a position had failed.
+                self.__num_cylinders -= 1
 
         # --- Filter any -1 positions and any cylinders at those positions --- #
         # 1. Zip the group and all the cylinders (apart from the first) together
@@ -142,10 +149,6 @@ class CylinderGroup:
 
         # - Recursion terminator - #
         if positions_left == 0:  # if we have looped through all possible positions and are back to the original position.
-            return -1
-
-        # -- Weight -- #
-        if cylinder.weight + self.__weight > self.__max_weight:
             return -1
 
         # -- Geometric -- #
@@ -215,9 +218,10 @@ class CylinderGroup:
 
         return 1. / distance
 
-    def visualise(self, lenience: float = .6) -> None:
+    def visualise(self, max_weight: int, lenience: float = .6) -> None:
         """
         Sketches the cylinders within this group in their appropriate locations.
+        :param int max_weight: The maximum weight the container can hold.
         :param float lenience: The size of the region of acceptance for the overall groups centre of mass. This is to
         visually show whether the group meets the weight distribution criteria.
         :return: None
@@ -274,7 +278,7 @@ class CylinderGroup:
         ax.set_title(
             f"Optimised solution for {self.__num_cylinders} cylinder{'s' if self.__num_cylinders > 1 else ''} at generation {self.__generation}\n"
             f"Distance between packed COM and container centre: {1./self.fitness():.3f}\n"
-            f"Packed weight: {self.__weight}/{self.__max_weight}",
+            f"Packed weight: {self.__weight}/{max_weight}",
             color="#F7F8F9", fontsize=14, pad=20, weight="bold"
         )
         ax.legend(loc='upper right', facecolor='#01364C', edgecolor='#F7F8F9', labelcolor='#F7F8F9', framealpha=0.9)
