@@ -1,7 +1,7 @@
 from population import *
 
 
-def run_ga(population_size: int = 50, num_cylinders: int = 5, mutation_rate: float = .1, max_generations: int = 100,
+def run_ga(*, population_size: int = 50, num_cylinders: int = 5, mutation_rate: float = .1, max_generations: int = 100,
            cylinder_sides: int = CYLINDER_SIDES, max_weight: int = 10_000):
     """
     Runs the genetic algorithm for the cargo loading problem provided.
@@ -16,6 +16,8 @@ def run_ga(population_size: int = 50, num_cylinders: int = 5, mutation_rate: flo
 
         # if generation % 10 == 0:
         #     population.best_cylinder_group.visualise(max_weight)
+
+    population.show_evolution()
 
 
 if __name__ == "__main__":

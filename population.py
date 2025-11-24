@@ -201,3 +201,10 @@ class Population:
                 [Cylinder(CYLINDER_SIDES, cylinder.radius, cylinder.weight) for cylinder in self.__bins.bins[bin_focus].cylinders],
                 next_groups[i]
             )
+
+    def show_evolution(self) -> None:
+        """
+        Uses the dynamic visualiser to illustrate the placement of cylinders between key generations.
+        :return: None
+        """
+        raise NotImplementedError
