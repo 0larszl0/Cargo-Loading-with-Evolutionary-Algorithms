@@ -1,6 +1,6 @@
 from matplotlib.patches import Circle, Rectangle, FancyArrowPatch, ArrowStyle
 import matplotlib.pyplot as plt
-from typing import List
+from typing import List, Tuple
 from math import dist
 from config import *
 from utils import *
@@ -46,8 +46,6 @@ class Cylinder:
 
     def bottom(self) -> float:
         return self.__centre[1] - self.__radius
-
-    # add __str__() ??
 
 
 class CylinderGroup:
@@ -166,7 +164,7 @@ class CylinderGroup:
         cylinder.centre = rotate(
             target_cylinder.centre,
             positioned_point,
-            radians((position % self.__cylinder_sides) * (360 / self.__cylinder_sides))
+            (position % self.__cylinder_sides) * (360 / self.__cylinder_sides)
         )
         cprint(debug, f"Rotated position:\t({cylinder.centre[0]:.4f}, {cylinder.centre[1]:.4f})")
 

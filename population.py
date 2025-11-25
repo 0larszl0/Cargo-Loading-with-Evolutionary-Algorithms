@@ -1,4 +1,5 @@
 from cylinders import Cylinder, CylinderGroup, CYLINDER_SIDES, CYLINDERS
+from canvas import DynamicCanvas
 from typing import List
 import random
 
@@ -85,6 +86,8 @@ class Population:
         for i, cylinder in enumerate(self.__cylinders):
             print(f"Cylinder {i+1}:\t- Weight: {cylinder.weight}\t- Centre: {cylinder.centre}\t- Radius: {cylinder.radius}")
 
+        self.__dynamic_canvas = DynamicCanvas(60, figsize=(10, 10))
+
     @property
     def best_cylinder_group(self) -> CylinderGroup:
         return self.__best_cylinder_group
@@ -122,6 +125,7 @@ class Population:
             [Cylinder(CYLINDER_SIDES, cylinder.radius, cylinder.weight) for cylinder in focussed_bin.cylinders],
             focussed_bin.size(), self.__cylinder_sides, focussed_bin.weight
         )
+
 
     def tournament_selection(self, k: int = 3) -> CylinderGroup:
         """

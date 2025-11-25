@@ -8,11 +8,12 @@ def rotate(origin: Tuple[float, float], point: Tuple[float, float], angle: float
     Performs a (counterclockwise) rotation of a point by an angle around an origin.
     :param Tuple[float, float] origin: The origin to rotate around.
     :param Tuple[float, float] point: The point that needs moving.
-    :param float angle: The angle, in radians, to move the point by.
+    :param float angle: The angle, in degrees, to move the point by. (will be converted to radians)
     :return: Tuple[float, float], the rotated point.
     """
 
     x_diff, y_diff = (point[0] - origin[0]), (point[1] - origin[1])
+    angle = radians(angle)
 
     return (
         origin[0] + (x_diff * cos(angle)) - (y_diff * sin(angle)),
@@ -20,18 +21,5 @@ def rotate(origin: Tuple[float, float], point: Tuple[float, float], angle: float
     )
 
 
-def cprint(condition: bool, *args, **kwargs) -> None:
-    """
-    Prints on a condition
-    :param bool condition: The condition
-    :param args: Arguments of builtin print
-    :param kwargs: The specified kwargs of builtin print.
-    :return: None
-    """
-    if condition:
-        print(*args, **kwargs)
-
-
 if __name__ == "__main__":
     print(rotate((0, 0), (5, 5), radians(90)))  # radians multiples pi/180 to the deg value.
-    cprint(False, "Hello World")

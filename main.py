@@ -1,4 +1,5 @@
-from population import *
+from population import Population
+from config import CYLINDER_SIDES
 
 
 def run_ga(*, population_size: int = 50, num_cylinders: int = 5, mutation_rate: float = .1, max_generations: int = 100,
