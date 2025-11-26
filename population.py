@@ -86,7 +86,7 @@ class Population:
         for i, cylinder in enumerate(self.__cylinders):
             print(f"Cylinder {i+1}:\t- Weight: {cylinder.weight}\t- Centre: {cylinder.centre}\t- Radius: {cylinder.radius}")
 
-        self.__dynamic_canvas = DynamicCanvas(60, figsize=(10, 10))
+        self.__dynamic_canvas = DynamicCanvas(30, figsize=(10, 10))
         self.__dynamic_canvas.draw_acceptance_range()
         self.__dynamic_canvas.mark_centre()
         self.__dynamic_canvas.setup_axis()
@@ -216,5 +216,7 @@ class Population:
         Uses the dynamic visualiser to illustrate the placement of cylinders between key generations.
         :return: None
         """
+        self.__dynamic_canvas.add_patches()  # adds the cylinder patches at their initial positions onto the axes.
         print(self.__dynamic_canvas.save_states)
-        self.__dynamic_canvas.show()
+
+        self.__dynamic_canvas.show()  # Show the animation.

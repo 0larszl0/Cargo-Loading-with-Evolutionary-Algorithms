@@ -5,7 +5,7 @@ from config import CONTAINER_WIDTH, CONTAINER_HEIGHT
 import matplotlib.pyplot as plt
 from cylinders import Cylinder
 from custom_patches.circle import CustomCircle
-from typing import List, Dict, Tuple
+from typing import List, Dict, Tuple, Iterable
 
 
 class Canvas:
@@ -75,13 +75,6 @@ class Canvas:
             self._artists[cylinder] = CustomCircle((0, 0), cylinder.radius, cylinder.weight,
                                                    fill=False, edgecolor="#99D9DD", linewidth=2)
 
-    def position_cylinders(self) -> None:
-        """
-        Positions cylinders based on the save states.
-        :return: None
-        """
-        ...
-
     @staticmethod
     def show() -> None:
         """
@@ -92,12 +85,15 @@ class Canvas:
 
 
 class DynamicCanvas(Canvas):
-    def __init__(self, fps: int, **subplot_kwargs):
+    def __init__(self, fpp: int, **subplot_kwargs):
         super().__init__(**subplot_kwargs)
 
-        self.__fps = fps
+        # frames per patch, how many positions to move in between each position.
+        # Say you're going from (8, y) -> (9, y), with fpp = 60, you have to move in increments of (9-8) / 60
+        self.__fpp = fpp
+
         self.__frame = -1
-        self.__save_index = 0
+        self.__save_index = -1
 
         self.__save_states = {}
         self.__saved_generations = []
@@ -115,44 +111,54 @@ class DynamicCanvas(Canvas):
         for cylinder in self._artists.keys():
             if not self.__save_states.get(cylinder, False):  # checks whether the cylinder in __save_states exists
                 self.__save_states[cylinder] = [[cylinder.centre], []]  # if not, then add an entry for it.
+
+                self._artists[cylinder].set_position(cylinder.centre)  # on the first save of the set of cylinders, initialise the start positions of the
                 continue
 
             self.__save_states[cylinder][0].append(cylinder.centre)  # adds the new centre of the cylinder to its associated save
             self.__save_states[cylinder][1].append((  # appends the x and y increments the cylinder needs to make each frame to get to the new centre.
-                (self.__save_states[cylinder][0][-1][0] - self.__save_states[cylinder][0][-2][0]) / self.__fps,
-                (self.__save_states[cylinder][0][-1][1] - self.__save_states[cylinder][0][-2][1]) / self.__fps
+                (self.__save_states[cylinder][0][-1][0] - self.__save_states[cylinder][0][-2][0]) / self.__fpp,
+                (self.__save_states[cylinder][0][-1][1] - self.__save_states[cylinder][0][-2][1]) / self.__fpp
             ))
 
         self.__saved_generations.append(generation)
 
-    def update(self, frame: int) -> List[Artist]:
+    def add_patches(self) -> None:
+        """
+        Adds the cylinder patches onto an axes.
+        :return: None
+        """
+        for cylinder_patch in self._artists.values():
+            cylinder_patch.add_to(self._ax)
+
+    def update(self, _) -> Iterable[Artist]:
         """
         Updates the artist's positions based on the difference between the current position and the next whilst
         incorporating the amount of fps the animation will have.
-        :return: None
+        :return: Iterable[Artist]
         """
         if self.__frame == -1:
             self.__save_index += 1
             self.__frame += 1
-            return
+            return self._artists.values()
 
-        # for cylinder, cylinder_patch in self._artists.items():
-        #     cylinder_patch.add_to(self._ax)
+        for cylinder, cylinder_patch in self._artists.items():
+            x_incr, y_incr = self.__save_states[cylinder][1][self.__save_index]
+            cylinder_patch.set_position((cylinder_patch.center[0] + x_incr, cylinder_patch.center[1] + y_incr))
 
         self.__frame += 1
         if self.__frame == 60:
             self.__frame = -1
 
-
+        return self._artists.values()
 
     def show(self) -> None:
         """
         An override of the child method.
         :return: None
         """
-        frames = (len(self.__saved_generations) - 1) * self.__fps
-        # self.update(frames)
-        # anim = animation.FuncAnimation(fig=self._fig, func=self.update, frames=frames, interval=self.__fps, repeat=False)
+        frames = (len(self.__saved_generations) - 1) * self.__fpp  # calculates the total number of frames for this animation.
+        anim = animation.FuncAnimation(fig=self._fig, func=self.update, frames=frames, interval=0, repeat=False)
         plt.show()
 
 
