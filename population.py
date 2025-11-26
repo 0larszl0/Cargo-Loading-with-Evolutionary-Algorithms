@@ -87,6 +87,9 @@ class Population:
             print(f"Cylinder {i+1}:\t- Weight: {cylinder.weight}\t- Centre: {cylinder.centre}\t- Radius: {cylinder.radius}")
 
         self.__dynamic_canvas = DynamicCanvas(60, figsize=(10, 10))
+        self.__dynamic_canvas.draw_acceptance_range()
+        self.__dynamic_canvas.mark_centre()
+        self.__dynamic_canvas.setup_axis()
 
     @property
     def best_cylinder_group(self) -> CylinderGroup:
@@ -126,6 +129,7 @@ class Population:
             focussed_bin.size(), self.__cylinder_sides, focussed_bin.weight
         )
 
+        self.__dynamic_canvas.add_cylinders(self.__best_cylinder_group.cylinders)
 
     def tournament_selection(self, k: int = 3) -> CylinderGroup:
         """
@@ -181,13 +185,14 @@ class Population:
         # Get the best cylinder group in the current generation.
         best_cylinder_group_gen = max(self.__population, key=lambda x: x.fitness())
 
-        # Check whether a best cylinder group exists or if the best generation group outperforms any previous group.
+        # Check whether the best cylinder group in this generation group outperforms any previous ones.
         print(best_cylinder_group_gen.fitness(), "---", self.__best_cylinder_group.fitness())
         if best_cylinder_group_gen.fitness() > self.__best_cylinder_group.fitness():
-            # The valuable part of a group is the positions composing each cylinder in that group
-            # As a result we duplicate those centres and apply them to the best cylinder group variable.
+            # Update the centre values of the Cylinders within the best cylinder group.
             for i, cylinder in enumerate(best_cylinder_group_gen.cylinders):
                 self.__best_cylinder_group.cylinders[i].centre = cylinder.centre
+
+            self.__dynamic_canvas.save_state(self.__generations)
 
         # - Create new population - #
         # Use the recycling method within existing cylinder groups to avoid creating many objects that will be unused.
@@ -211,4 +216,5 @@ class Population:
         Uses the dynamic visualiser to illustrate the placement of cylinders between key generations.
         :return: None
         """
-        raise NotImplementedError
+        print(self.__dynamic_canvas.save_states)
+        self.__dynamic_canvas.show()

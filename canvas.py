@@ -1,17 +1,18 @@
+from matplotlib.artist import Artist
 from matplotlib.patches import Rectangle
 from matplotlib import animation
 from config import CONTAINER_WIDTH, CONTAINER_HEIGHT
 import matplotlib.pyplot as plt
 from cylinders import Cylinder
 from custom_patches.circle import CustomCircle
-from typing import List
+from typing import List, Dict, Tuple
 
 
 class Canvas:
     def __init__(self, **subplot_kwargs):
         self._fig, self._ax = plt.subplots(**subplot_kwargs)
 
-        self._artists: List[CustomCircle] = []
+        self._artists: Dict[Cylinder, CustomCircle] = {}  # {Reference of object: Reference of custom patch}
 
     def draw_acceptance_range(self, weight_range: float = .6, rect_color: str = "#F4BA02") -> None:
         """
@@ -64,11 +65,22 @@ class Canvas:
 
         self._fig.patch.set_facecolor(figure_face_colour)
 
-    def add_cylinder(self, cylinders: List[Cylinder]):
+    def add_cylinders(self, cylinders: List[Cylinder]) -> None:
+        """
+        Groups a cylinder with a custom circle.
+        :param List[Cylinder] cylinders: The cylinders to group.
+        :return: None
+        """
+        for cylinder in cylinders:
+            self._artists[cylinder] = CustomCircle((0, 0), cylinder.radius, cylinder.weight,
+                                                   fill=False, edgecolor="#99D9DD", linewidth=2)
+
+    def position_cylinders(self) -> None:
+        """
+        Positions cylinders based on the save states.
+        :return: None
+        """
         ...
-        # self._artists.append(CustomCircle(cylinder.centre, cylinder.radius, cylinder.weight))
-        # As the centre of a cylinder is the only thing that is guaranteed to change, the callback will only occur when a cylinder moves.
-        # self._artists[-1].add_callback()
 
     @staticmethod
     def show() -> None:
@@ -84,35 +96,63 @@ class DynamicCanvas(Canvas):
         super().__init__(**subplot_kwargs)
 
         self.__fps = fps
-        self.__save_states = {}
+        self.__frame = -1
+        self.__save_index = 0
 
-    def save_state(self) -> None:
+        self.__save_states = {}
+        self.__saved_generations = []
+
+    @property
+    def save_states(self) -> Dict[Cylinder, Tuple[float, float]]:
+        return self.__save_states
+
+    def save_state(self, generation: int) -> None:
         """
-        Saves the current position of each artist.
+        Saves the new position of each cylinder associated with an artist.
+        :param int generation: The generation to save at.
         :return: None
         """
-        for artist in self._artists:
-            if self.__save_states.get(artist, False):
-                self.__save_states[artist].append(artist.xy)
+        for cylinder in self._artists.keys():
+            if not self.__save_states.get(cylinder, False):  # checks whether the cylinder in __save_states exists
+                self.__save_states[cylinder] = [[cylinder.centre], []]  # if not, then add an entry for it.
                 continue
 
-            self.__save_states[artist] = [artist.xy]
+            self.__save_states[cylinder][0].append(cylinder.centre)  # adds the new centre of the cylinder to its associated save
+            self.__save_states[cylinder][1].append((  # appends the x and y increments the cylinder needs to make each frame to get to the new centre.
+                (self.__save_states[cylinder][0][-1][0] - self.__save_states[cylinder][0][-2][0]) / self.__fps,
+                (self.__save_states[cylinder][0][-1][1] - self.__save_states[cylinder][0][-2][1]) / self.__fps
+            ))
 
-    def update(self, frame: int) -> None:
+        self.__saved_generations.append(generation)
+
+    def update(self, frame: int) -> List[Artist]:
         """
         Updates the artist's positions based on the difference between the current position and the next whilst
         incorporating the amount of fps the animation will have.
-        :param int frame: The current frame being shown.
         :return: None
         """
-        ...
+        if self.__frame == -1:
+            self.__save_index += 1
+            self.__frame += 1
+            return
+
+        # for cylinder, cylinder_patch in self._artists.items():
+        #     cylinder_patch.add_to(self._ax)
+
+        self.__frame += 1
+        if self.__frame == 60:
+            self.__frame = -1
+
+
 
     def show(self) -> None:
         """
         An override of the child method.
         :return: None
         """
-        animation.FuncAnimation(fig=self._fig, func=self.update, fps=self.__fps, interval=30)
+        frames = (len(self.__saved_generations) - 1) * self.__fps
+        # self.update(frames)
+        # anim = animation.FuncAnimation(fig=self._fig, func=self.update, frames=frames, interval=self.__fps, repeat=False)
         plt.show()
 
 

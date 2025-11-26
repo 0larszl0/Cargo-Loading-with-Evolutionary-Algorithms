@@ -25,22 +25,37 @@ class CustomCircle(Circle):
                 xy[0], xy[1] + (radius * .35), f"{weight}kg",
                 ha="center", va="center", color=text_colour, fontsize=8 * radius
             ),
-            Circle(xy, radius, edgecolor=kwargs["edgecolor"])  # centre marker
+            Circle(xy, radius * 0.05, edgecolor=kwargs["edgecolor"])  # centre marker
         ]
 
     @property
     def xy(self) -> Tuple[float, float]:
         return self.__xy
 
-    def clear(self) -> None:
+    def add_to(self, ax: Axes) -> None:
         """
-        Clears this patch and all its annotations from the figure its attached to.
+        Adds the circle and its annotations to the Axes.
+        :param plt.Axes ax: The axes to display the annotations and circle onto.
         :return: None
         """
         for annotation in self.__annotations:
-            annotation.remove()
+            if type(annotation) == Text:
+                ax.add_artist(annotation)
+                continue
 
-        self.remove()
+            ax.add_patch(annotation)
+
+        ax.add_patch(self)
+
+    # def toggle_visibility(self) -> None:
+    #     """
+    #     Toggles the visibility of the circle and its annotations.
+    #     :return: None
+    #     """
+    #     for annotation in self.__annotations:
+    #         annotation.set_visible(not annotation.get_visible())
+    #
+    #     self.set_visible(not self.get_visible())
 
     def update_annotations(self) -> None:
         """
@@ -49,13 +64,3 @@ class CustomCircle(Circle):
         """
         ...
 
-    def show_annotations(self, ax: Axes) -> None:
-        """
-        Display the annotations onto an axis.
-        :param plt.Axes ax: The axes to the display the annotations onto.
-        :return: None
-        """
-        for annotation in self.__annotations:
-            ax.add_patch(annotation)
-
-        ax.add_patch(self)
