@@ -209,6 +209,8 @@ class Population:
                 next_groups[i]
             )
 
+        self.__generations += 1
+
     def show_evolution(self) -> None:
         """
         Uses the dynamic visualiser to illustrate the placement of cylinders between key generations.
@@ -219,7 +221,10 @@ class Population:
         self.__animated_container.draw_patches()  # adds the cylinder patches at their initial positions onto the axes.
         self.__animated_container.draw_com_marker()
 
-        # print(self.__animated_container.save_states)
+        print("\033[4mRecorded data\033[0m:")
+        print(f"Save states:\n{self.__animated_container.save_states}")
+        print(f"Saved generations: {self.__animated_container.saved_generations}")
 
+        self.__animated_container.choose_title(self.__animated_container.TRANSITION_TITLE)
         self.__animated_container.setup_axis()  # Saved penultimately to ensure all labels will be accounted for in the legend.
         self.__animated_container.show()  # Show the animation.

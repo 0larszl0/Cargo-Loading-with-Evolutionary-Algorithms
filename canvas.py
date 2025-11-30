@@ -4,10 +4,12 @@ from matplotlib.lines import Line2D
 from matplotlib import animation
 from config import CONTAINER_WIDTH, CONTAINER_HEIGHT
 import matplotlib.pyplot as plt
+from matplotlib.text import Text
 from cylinders import Cylinder, CylinderGroup
 from custom_patches.circle import CustomCircle
 from typing import List, Dict, Tuple, Iterable, Union
 from utils import com
+from time import sleep
 
 
 class Container:
@@ -16,7 +18,9 @@ class Container:
 
         self._best_cylinder_group: Union[CylinderGroup, None] = None
         self._cylinder_patches: List[CustomCircle] = []
+
         self._com_marker: Union[Line2D, None] = None
+        self._title: Text = self._ax.set_title("", color="#F7F8F9", fontsize=14, pad=20, weight="bold")
 
     @property
     def best_cylinder_group(self) -> Union[CylinderGroup, None]:
@@ -78,14 +82,19 @@ class Container:
 
         self._com_marker = self._ax.plot(x_com, y_com, 'x', color="#E21F4A", markersize=6, markeredgewidth=3, label="Centre of Mass")[0]
 
-    def set_title(self, title: str, colour: str = "#F7F8F9") -> None:
+    def update_title(self, title: str, colour: str = "#F7F8F9") -> None:
         """
         Sets a title to the figure.
         :param str title: The title to set.
         :param str colour: The colour of the title.
         :return: None
         """
-        self._ax.set_title(title, color=colour, fontsize=14, pad=20, weight="bold")
+        self._title.set_text(title)
+        self._title.set_color(colour)
+
+
+        print("TITLE SET")
+        print(self._title.get_text())
 
     def setup_axis(self, *, spine_colour: str = "#F7F8F9", tick_colour: str = "#F7F8F9", grid_colour: str = "#F7F8F9",
                    face_colour: str = "#01364C", legend_colour: str = "#F7F8F9", figure_face_colour: str = "#01364C") -> None:
@@ -117,13 +126,17 @@ class Container:
 
 
 class AnimatedContainer(Container):
+    TRANSITION_TITLE = 1
+    BEST_TITLE = 2
+
     def __init__(self, fpp: int, **subplot_kwargs):
         super().__init__(**subplot_kwargs)
 
-        # frames per patch, how many positions to move in between each position.
+        # frames per patch, how many positions to move in between each optimal centre.
         # Say you're going from (8, y) -> (9, y), with fpp = 60, you have to move in increments of (9-8) / 60
         self.__fpp = fpp
 
+        self.__max_frames = -1
         self.__frame = -1
         self.__save_index = -1
 
@@ -133,6 +146,10 @@ class AnimatedContainer(Container):
     @property
     def save_states(self) -> Dict[Cylinder, Tuple[float, float]]:
         return self.__save_states
+
+    @property
+    def saved_generations(self) -> List[Tuple[int, float]]:
+        return self.__saved_generations
 
     def save_state(self, generation: int) -> None:
         """
@@ -163,8 +180,8 @@ class AnimatedContainer(Container):
                 (self.__save_states[cylinder_patch][0][-1][1] - self.__save_states[cylinder_patch][0][-2][1]) / self.__fpp
             ))
 
-        # Record the generation that improved the pre-existing solution.
-        self.__saved_generations.append(generation)
+        # Record the generation, with its COM, that improved the pre-existing solution.
+        self.__saved_generations.append((generation, self._best_cylinder_group.fitness()))
 
     def update_com_marker(self) -> None:
         """
@@ -176,17 +193,43 @@ class AnimatedContainer(Container):
         self._com_marker.set_xdata([x_com])
         self._com_marker.set_ydata([y_com])
 
+    def choose_title(self, title_option: int) -> None:
+        """
+        Use the Enums within this class to select an option.
+        :param int title_option: The int that determines what title there is.
+        :return: None
+        """
+        match title_option:
+            case 1:
+                self.update_title(
+                    f"Moving from the last best generation ({self.__saved_generations[self.__save_index][0]}) to new best generation ({self.__saved_generations[self.__save_index + 1][0]})\n"
+                    f"From fitness: {self.__saved_generations[self.__save_index][1]} to {self.__saved_generations[self.__save_index + 1][1]}"
+                )
+
+            case 2:
+                self.update_title(
+                    f"The best packing found was within Generation {self.__saved_generations[self.__save_index][0]}\n"
+                    f"Fitness: {self.__saved_generations[self.__save_index][1]}"
+                )
+
     def update(self, _) -> Iterable[Artist]:
         """
         Updates the artist's positions based on the difference between the current position and the next whilst
         incorporating the amount of fps the animation will have.
         :return: Iterable[Artist]
         """
-        if self.__frame == -1:
+        if self.__frame % self.__fpp == 0 and self.__frame >= self.__fpp:
             self.__save_index += 1
-            self.__frame += 1
-            return self._cylinder_patches
 
+            # - When an optimal position is reached, the title will indicate so and pause, before moving on again - #
+            self.choose_title(self.BEST_TITLE)
+            sleep(2.5)
+            self.choose_title(self.TRANSITION_TITLE)
+
+        elif self.__frame == self.__max_frames - 1:  # When the last frame is met, change the title manually before the last frame ends.
+            self.choose_title(self.BEST_TITLE)
+
+        # - Change patch positions - #
         for i, cylinder in enumerate(self._best_cylinder_group.cylinders):
             cylinder_patch = self._cylinder_patches[i]
 
@@ -194,10 +237,7 @@ class AnimatedContainer(Container):
             cylinder_patch.set_position((cylinder_patch.centre[0] + x_incr, cylinder_patch.centre[1] + y_incr))
 
         self.update_com_marker()
-
         self.__frame += 1
-        if self.__frame == 60:
-            self.__frame = -1
 
         return self._cylinder_patches
 
@@ -206,10 +246,9 @@ class AnimatedContainer(Container):
         An override of the child method.
         :return: None
         """
-        frames = (len(self.__saved_generations) - 1) * self.__fpp  # calculates the total number of frames for this animation.
-        anim = animation.FuncAnimation(fig=self._fig, func=self.update, frames=frames, interval=0, repeat=False)
-        plt.show()
-
+        self.__max_frames = (len(self.__saved_generations) - 1) * self.__fpp  # calculates the total number of frames for this animation.
+        _ = animation.FuncAnimation(fig=self._fig, func=self.update, frames=self.__max_frames, interval=0, repeat=False)
+        super().show()
 
 
 if __name__ == "__main__":
