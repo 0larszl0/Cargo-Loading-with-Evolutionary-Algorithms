@@ -1,6 +1,8 @@
 from cylinders import Cylinder, CylinderGroup, CYLINDER_SIDES, CYLINDERS
 from canvas import AnimatedContainer
+from utils import get_random_index
 from typing import List
+from numpy import array
 import random
 
 
@@ -138,6 +140,36 @@ class Population:
         # Randomly select k cylinder groups and return the one with the highest fitness
         return max(random.sample(self.__population, k), key=lambda x: x.fitness())
 
+    def roulette_wheel_selection(self) -> CylinderGroup:
+        """
+        Perform roulette wheel selection to select a cylinder group.
+        :return: CylinderGroup
+        """
+        fitnesses = array([group.fitness() for group in self.__population])
+        normalised_fitnesses = fitnesses / sum(fitnesses)
+
+        return self.__population[get_random_index(normalised_fitnesses)]
+
+    def rank_based_selection(self) -> CylinderGroup:
+        """
+        Performs ranked based selection to select a cylinder group.
+        :return: CylinderGroup
+        """
+        # - Sort the population in terms of fitness from smallest to largest - #
+        sorted_population = sorted(self.__population, key=lambda group: group.fitness())
+
+        total_ranks = sum(range(1, self.__size + 1))
+        normalised_ranks = [i / total_ranks for i in range(1, self.__size + 1)]
+
+        return sorted_population[get_random_index(normalised_ranks)]
+
+    def elitist_selection(self, k: int = 5) -> CylinderGroup:
+        """
+        Gets one of the best k groups from the population.
+        :return: CylinderGroup
+        """
+        return random.choice(sorted(self.__population, key=lambda group: group.fitness())[-k:])
+
     @staticmethod
     def single_point_crossover(group1: List[int], group2: List[int]) -> List[int]:
         """
@@ -152,6 +184,15 @@ class Population:
             group1[:random_point] + group2[random_point:],
             group2[:random_point] + group1[random_point:]
         ))
+
+    def multi_point_crossover(self):
+        ...
+
+    def uniform_crossover(self):
+        ...
+
+    def davis_order_selection(self):
+        ...
 
     def mutate(self, group: List[int]) -> List[int]:
         """
