@@ -1,8 +1,9 @@
 from cylinders import Cylinder, CylinderGroup, CYLINDER_SIDES, CYLINDERS
 from canvas import AnimatedContainer
-from utils import get_random_index
-from typing import List
-from numpy import array
+from utils import get_random_indices
+from numpy import array, ndarray
+
+from typing import List, Tuple
 import random
 
 
@@ -140,15 +141,33 @@ class Population:
         # Randomly select k cylinder groups and return the one with the highest fitness
         return max(random.sample(self.__population, k), key=lambda x: x.fitness())
 
+    def get_normalised_fitness(self) -> ndarray:
+        """
+        Get an array of normalised fitnesses from the population
+        :return: ndarray
+        """
+        fitnesses = array([group.fitness() for group in self.__population])
+        return fitnesses / sum(fitnesses)
+
     def roulette_wheel_selection(self) -> CylinderGroup:
         """
         Perform roulette wheel selection to select a cylinder group.
         :return: CylinderGroup
         """
-        fitnesses = array([group.fitness() for group in self.__population])
-        normalised_fitnesses = fitnesses / sum(fitnesses)
+        return self.__population[
+            get_random_indices(self.get_normalised_fitness())[0]
+        ]
 
-        return self.__population[get_random_index(normalised_fitnesses)]
+    def stochastic_universal_sampling(self) -> Tuple[CylinderGroup, CylinderGroup]:
+        """
+        Similar to Roulette Wheel Selection, but instead of one fixed point there's two.
+        :return: Tuple[CylinderGroup, CylinderGroup]
+        """
+        child1_ind, child2_ind = get_random_indices(self.get_normalised_fitness(), 2)
+        return (
+            self.__population[child1_ind],
+            self.__population[child2_ind]
+        )
 
     def rank_based_selection(self) -> CylinderGroup:
         """
@@ -161,7 +180,7 @@ class Population:
         total_ranks = sum(range(1, self.__size + 1))
         normalised_ranks = [i / total_ranks for i in range(1, self.__size + 1)]
 
-        return sorted_population[get_random_index(normalised_ranks)]
+        return sorted_population[get_random_indices(normalised_ranks)[0]]
 
     def elitist_selection(self, k: int = 5) -> CylinderGroup:
         """
