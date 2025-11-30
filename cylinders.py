@@ -78,6 +78,10 @@ class CylinderGroup:
     def group(self) -> List[int]:
         return self.__group
 
+    @property
+    def weight(self) -> int:
+        return self.__weight
+
     def recycle(self, cylinders: List[Cylinder], grouping: List[int]) -> None:
         """
         Reuses the cylinder group by updating the group value and resetting the cylinders in the group.
@@ -194,23 +198,13 @@ class CylinderGroup:
 
         return position
 
-    def com(self) -> Tuple[float, float]:
-        """
-        Calculate the group's centre of mass (COM) in each axis.
-        :return: Tuple[float]
-        """
-        # Get a list of masses multiplied by their axis (MMA)
-        mma_x, mma_y = zip(*[(cylinder.weight * cylinder.centre[0], cylinder.weight * cylinder.centre[1]) for cylinder in self.__cylinders])
-
-        return sum(mma_x) / self.__weight, sum(mma_y) / self.__weight
-
     def fitness(self) -> float:
         """
         The fitness is the inverse of the distance between the COM and the centre of the container.
         (shorter distance = higher fitness)
         :return: -> float
         """
-        distance = dist(self.com(), (CONTAINER_WIDTH / 2, CONTAINER_HEIGHT / 2))
+        distance = dist(com(self.__cylinders, self.__weight), (CONTAINER_WIDTH / 2, CONTAINER_HEIGHT / 2))
         if distance == 0:  # if the packed COM is at the centre of the container.
             return float("inf")
 
@@ -260,7 +254,7 @@ class CylinderGroup:
         ax.plot(CONTAINER_WIDTH / 2, CONTAINER_HEIGHT / 2, 'x', color='#F4BA02', markersize=6, markeredgewidth=3, label='Origin')
 
         # Mark the group's centre of mass.
-        x_com, y_com = self.com()
+        x_com, y_com = com(self.__cylinders, self.__weight)
         ax.plot(x_com, y_com, 'x', color="#E21F4A", markersize=6, markeredgewidth=3, label="Centre of Mass")
 
         # - Set up axis - #

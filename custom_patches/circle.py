@@ -11,6 +11,8 @@ class CustomCircle(Circle):
                  text_colour: str = "#F7F8F9", arrow_colour: str = "#AFD8DB", **kwargs):
         super().__init__(xy, radius, **kwargs)
 
+        self.__weight = weight
+
         arrow_style = ArrowStyle.CurveAB(head_length=radius * 4, head_width=radius * 1.6)
 
         self.__annotations = [
@@ -50,6 +52,18 @@ class CustomCircle(Circle):
 
                 case mpl.patches.Circle:
                     annotation.center = xy
+
+    @property
+    def weight(self) -> int:
+        return self.__weight
+
+    @property
+    def centre(self) -> Tuple[float, float]:
+        """
+        Using this for continuity with British spelling and so some utils can interpret the property the same way.
+        :return: Tuple[float, float]
+        """
+        return self.center  # ignore warning, it does in fact return Tuple[float, float]
 
     def set_position(self, xy: Tuple[float, float]) -> None:
         """

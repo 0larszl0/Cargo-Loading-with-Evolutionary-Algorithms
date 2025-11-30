@@ -1,5 +1,5 @@
 from cylinders import Cylinder, CylinderGroup, CYLINDER_SIDES, CYLINDERS
-from canvas import DynamicCanvas
+from canvas import AnimatedContainer
 from typing import List
 import random
 
@@ -86,10 +86,7 @@ class Population:
         for i, cylinder in enumerate(self.__cylinders):
             print(f"Cylinder {i+1}:\t- Weight: {cylinder.weight}\t- Centre: {cylinder.centre}\t- Radius: {cylinder.radius}")
 
-        self.__dynamic_canvas = DynamicCanvas(30, figsize=(10, 10))
-        self.__dynamic_canvas.draw_acceptance_range()
-        self.__dynamic_canvas.mark_centre()
-        self.__dynamic_canvas.setup_axis()
+        self.__animated_container = AnimatedContainer(30, figsize=(10, 10))
 
     @property
     def best_cylinder_group(self) -> CylinderGroup:
@@ -129,7 +126,8 @@ class Population:
             focussed_bin.size(), self.__cylinder_sides, focussed_bin.weight
         )
 
-        self.__dynamic_canvas.add_cylinders(self.__best_cylinder_group.cylinders)
+        self.__animated_container.best_cylinder_group = self.__best_cylinder_group
+        self.__animated_container.add_cylinders()
 
     def tournament_selection(self, k: int = 3) -> CylinderGroup:
         """
@@ -192,7 +190,7 @@ class Population:
             for i, cylinder in enumerate(best_cylinder_group_gen.cylinders):
                 self.__best_cylinder_group.cylinders[i].centre = cylinder.centre
 
-            self.__dynamic_canvas.save_state(self.__generations)
+            self.__animated_container.save_state(self.__generations)
 
         # - Create new population - #
         # Use the recycling method within existing cylinder groups to avoid creating many objects that will be unused.
@@ -216,7 +214,12 @@ class Population:
         Uses the dynamic visualiser to illustrate the placement of cylinders between key generations.
         :return: None
         """
-        self.__dynamic_canvas.add_patches()  # adds the cylinder patches at their initial positions onto the axes.
-        print(self.__dynamic_canvas.save_states)
+        self.__animated_container.draw_acceptance_range()
+        self.__animated_container.draw_centre()
+        self.__animated_container.draw_patches()  # adds the cylinder patches at their initial positions onto the axes.
+        self.__animated_container.draw_com_marker()
 
-        self.__dynamic_canvas.show()  # Show the animation.
+        # print(self.__animated_container.save_states)
+
+        self.__animated_container.setup_axis()  # Saved penultimately to ensure all labels will be accounted for in the legend.
+        self.__animated_container.show()  # Show the animation.

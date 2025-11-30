@@ -1,18 +1,51 @@
 from matplotlib.artist import Artist
 from matplotlib.patches import Rectangle
+from matplotlib.lines import Line2D
 from matplotlib import animation
 from config import CONTAINER_WIDTH, CONTAINER_HEIGHT
 import matplotlib.pyplot as plt
-from cylinders import Cylinder
+from cylinders import Cylinder, CylinderGroup
 from custom_patches.circle import CustomCircle
-from typing import List, Dict, Tuple, Iterable
+from typing import List, Dict, Tuple, Iterable, Union
+from utils import com
 
 
-class Canvas:
+class Container:
     def __init__(self, **subplot_kwargs):
         self._fig, self._ax = plt.subplots(**subplot_kwargs)
 
-        self._artists: Dict[Cylinder, CustomCircle] = {}  # {Reference of object: Reference of custom patch}
+        self._best_cylinder_group: Union[CylinderGroup, None] = None
+        self._cylinder_patches: List[CustomCircle] = []
+        self._com_marker: Union[Line2D, None] = None
+
+    @property
+    def best_cylinder_group(self) -> Union[CylinderGroup, None]:
+        return self._best_cylinder_group
+
+    @best_cylinder_group.setter
+    def best_cylinder_group(self, new_best: CylinderGroup) -> None:
+        self._best_cylinder_group = new_best
+
+    def add_cylinders(self) -> None:
+        """
+        Creates CustomCircle objects that correspond to each cylinder in the best_cylinder_group's cylinders respectively.
+        :return: None
+        """
+        if self._best_cylinder_group is None:  # checks whether the best cylinder group has been set.
+            raise Exception("\r\033[1m\033[31mCustom Exception: Ensure that the best cylinder group is set before calling Container.add_cylinders()\033[0m")
+
+        for cylinder in self._best_cylinder_group.cylinders:
+            # append a CustomCircle object at position (0, 0), this will be changed when saving states.
+            self._cylinder_patches.append(
+                CustomCircle((0, 0), cylinder.radius, cylinder.weight, fill=False, edgecolor="#99D9DD", linewidth=2))
+
+    def draw_patches(self) -> None:
+        """
+        Adds the cylinder patches onto an axes.
+        :return: None
+        """
+        for cylinder_patch in self._cylinder_patches:
+            cylinder_patch.add_to(self._ax)
 
     def draw_acceptance_range(self, weight_range: float = .6, rect_color: str = "#F4BA02") -> None:
         """
@@ -28,13 +61,22 @@ class Canvas:
 
         self._ax.add_patch(wbc)
 
-    def mark_centre(self, marker_colour: str = "#F4BA02") -> None:
+    def draw_centre(self, marker_colour: str = "#F4BA02") -> None:
         """
-        Add a marker indicating the centre of the figure/container.
+        Add a marker indicating the centre of the figure/container. This marker does not need to be tracked.
         :param str marker_colour: The hex-colour of the marker.
         :return: None
         """
         self._ax.plot(CONTAINER_WIDTH / 2, CONTAINER_HEIGHT / 2, 'x', color=marker_colour, markersize=6, markeredgewidth=3, label='Origin')
+
+    def draw_com_marker(self) -> None:
+        """
+        Draws the Center of Mass marker onto the screen.
+        :return: None
+        """
+        x_com, y_com = com(self._cylinder_patches, self._best_cylinder_group.weight)
+
+        self._com_marker = self._ax.plot(x_com, y_com, 'x', color="#E21F4A", markersize=6, markeredgewidth=3, label="Centre of Mass")[0]
 
     def set_title(self, title: str, colour: str = "#F7F8F9") -> None:
         """
@@ -65,16 +107,6 @@ class Canvas:
 
         self._fig.patch.set_facecolor(figure_face_colour)
 
-    def add_cylinders(self, cylinders: List[Cylinder]) -> None:
-        """
-        Groups a cylinder with a custom circle.
-        :param List[Cylinder] cylinders: The cylinders to group.
-        :return: None
-        """
-        for cylinder in cylinders:
-            self._artists[cylinder] = CustomCircle((0, 0), cylinder.radius, cylinder.weight,
-                                                   fill=False, edgecolor="#99D9DD", linewidth=2)
-
     @staticmethod
     def show() -> None:
         """
@@ -84,7 +116,7 @@ class Canvas:
         plt.show()
 
 
-class DynamicCanvas(Canvas):
+class AnimatedContainer(Container):
     def __init__(self, fpp: int, **subplot_kwargs):
         super().__init__(**subplot_kwargs)
 
@@ -95,7 +127,7 @@ class DynamicCanvas(Canvas):
         self.__frame = -1
         self.__save_index = -1
 
-        self.__save_states = {}
+        self.__save_states = {}  # {Cylinder patch: [[List of different centres deemed best at particular generations], [A list of increments between 'i' and 'i+1' centres]]}
         self.__saved_generations = []
 
     @property
@@ -108,28 +140,41 @@ class DynamicCanvas(Canvas):
         :param int generation: The generation to save at.
         :return: None
         """
-        for cylinder in self._artists.keys():
-            if not self.__save_states.get(cylinder, False):  # checks whether the cylinder in __save_states exists
-                self.__save_states[cylinder] = [[cylinder.centre], []]  # if not, then add an entry for it.
+        for i, cylinder in enumerate(self._best_cylinder_group.cylinders):
+            cylinder_patch = self._cylinder_patches[i]
 
-                self._artists[cylinder].set_position(cylinder.centre)  # on the first save of the set of cylinders, initialise the start positions of the
+            # check whether a save state exists for a cylinder patch
+            if not self.__save_states.get(cylinder_patch, False):
+                # - if no save exists - #
+                # Add a save state for that patch
+                self.__save_states[cylinder_patch] = [[cylinder.centre], []]
+
+                # Set the starting position for that patch
+                cylinder_patch.set_position(cylinder.centre)
+
                 continue
 
-            self.__save_states[cylinder][0].append(cylinder.centre)  # adds the new centre of the cylinder to its associated save
-            self.__save_states[cylinder][1].append((  # appends the x and y increments the cylinder needs to make each frame to get to the new centre.
-                (self.__save_states[cylinder][0][-1][0] - self.__save_states[cylinder][0][-2][0]) / self.__fpp,
-                (self.__save_states[cylinder][0][-1][1] - self.__save_states[cylinder][0][-2][1]) / self.__fpp
+            # Record the new best centre for a cylinder patch
+            self.__save_states[cylinder_patch][0].append(cylinder.centre)
+
+            # Append the x and y increments the patch needs to make each frame to get to the new centre.
+            self.__save_states[cylinder_patch][1].append((
+                (self.__save_states[cylinder_patch][0][-1][0] - self.__save_states[cylinder_patch][0][-2][0]) / self.__fpp,
+                (self.__save_states[cylinder_patch][0][-1][1] - self.__save_states[cylinder_patch][0][-2][1]) / self.__fpp
             ))
 
+        # Record the generation that improved the pre-existing solution.
         self.__saved_generations.append(generation)
 
-    def add_patches(self) -> None:
+    def update_com_marker(self) -> None:
         """
-        Adds the cylinder patches onto an axes.
+        Updates the x and y positions of the com marker, based on cylinder patch positions and weights.
         :return: None
         """
-        for cylinder_patch in self._artists.values():
-            cylinder_patch.add_to(self._ax)
+        x_com, y_com = com(self._cylinder_patches, self._best_cylinder_group.weight)
+
+        self._com_marker.set_xdata([x_com])
+        self._com_marker.set_ydata([y_com])
 
     def update(self, _) -> Iterable[Artist]:
         """
@@ -140,17 +185,21 @@ class DynamicCanvas(Canvas):
         if self.__frame == -1:
             self.__save_index += 1
             self.__frame += 1
-            return self._artists.values()
+            return self._cylinder_patches
 
-        for cylinder, cylinder_patch in self._artists.items():
-            x_incr, y_incr = self.__save_states[cylinder][1][self.__save_index]
-            cylinder_patch.set_position((cylinder_patch.center[0] + x_incr, cylinder_patch.center[1] + y_incr))
+        for i, cylinder in enumerate(self._best_cylinder_group.cylinders):
+            cylinder_patch = self._cylinder_patches[i]
+
+            x_incr, y_incr = self.__save_states[cylinder_patch][1][self.__save_index]
+            cylinder_patch.set_position((cylinder_patch.centre[0] + x_incr, cylinder_patch.centre[1] + y_incr))
+
+        self.update_com_marker()
 
         self.__frame += 1
         if self.__frame == 60:
             self.__frame = -1
 
-        return self._artists.values()
+        return self._cylinder_patches
 
     def show(self) -> None:
         """
@@ -164,10 +213,10 @@ class DynamicCanvas(Canvas):
 
 
 if __name__ == "__main__":
-    d = DynamicCanvas(60, figsize=(10, 10))
+    d = AnimatedContainer(60, figsize=(10, 10))
 
     d.draw_acceptance_range()
-    d.mark_centre()
+    d.draw_centre()
     d.setup_axis()
 
     plt.show()
