@@ -2,6 +2,7 @@ from cylinders import Cylinder, CylinderGroup, CYLINDER_SIDES, CYLINDERS
 from canvas import AnimatedContainer
 from utils import get_random_indices
 from numpy import array, ndarray
+from crossovers import *
 
 from typing import List, Tuple
 import random
@@ -189,30 +190,6 @@ class Population:
         """
         return random.choice(sorted(self.__population, key=lambda group: group.fitness())[-k:])
 
-    @staticmethod
-    def single_point_crossover(group1: List[int], group2: List[int]) -> List[int]:
-        """
-        Perform single-point crossover between two groups and randomly choose one of the offsprings.
-        :param List[int] group1: A list of position numbers.
-        :param List[int] group2: A list of position numbers.
-        :return: List[int]
-        """
-        random_point = random.randrange(0, len(group1))
-
-        return random.choice((
-            group1[:random_point] + group2[random_point:],
-            group2[:random_point] + group1[random_point:]
-        ))
-
-    def multi_point_crossover(self):
-        ...
-
-    def uniform_crossover(self):
-        ...
-
-    def davis_order_selection(self):
-        ...
-
     def mutate(self, group: List[int]) -> List[int]:
         """
         Applies a replacement mutation to a position number with another number in the range (i + 1) * cylinder_sides
@@ -256,7 +233,7 @@ class Population:
         # Use the recycling method within existing cylinder groups to avoid creating many objects that will be unused.
         next_groups = [
             self.mutate(
-                self.single_point_crossover(
+                single_point_crossover(
                     self.tournament_selection().group,
                     self.tournament_selection().group
                 )
