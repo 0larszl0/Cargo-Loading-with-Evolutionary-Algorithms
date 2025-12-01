@@ -3,7 +3,7 @@ from random import sample, choice
 from typing import List
 
 
-def multi_point_crossover(group1: List[int], group2: List[int], crossovers: int) -> List[int]:
+def multi_point_crossover(group1: List[int], group2: List[int], *, crossovers: int) -> List[int]:
     """
     Performs multi-point crossover between two groups and randomly chooses one of the offsprings.
     :param List[int] group1: A list of position numbers.
@@ -31,5 +31,5 @@ if __name__ == "__main__":
     # When running directly comment out the relative import at the top, and uncomment the below
     # from single_point import single_point_crossover
 
-    print(multi_point_crossover(list(range(10)), list(range(10, 20)), 1))
-    print(multi_point_crossover(list(range(10)), list(range(10, 20)), 4))
+    print(multi_point_crossover(list(range(10)), list(range(10, 20)), crossovers=1))
+    print(multi_point_crossover(list(range(10)), list(range(10, 20)), crossovers=4))
