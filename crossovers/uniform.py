@@ -31,7 +31,7 @@ if __name__ == "__main__":
     ux3 = uniform_crossover(g1.copy(), g2.copy(), bias=-.4)
 
     print(
-        f"Groups being crossover:\n"
+        f"Groups being crossed:\n"
         f"\t\033[4mGroup1\033[0m: \033[1m{g1}\033[0m\n"
         f"\t\033[4mGroup2\033[0m: \033[1m{g2}\033[0m\n\n"
         f"Bias: \033[1m0.5\033[0m:\t{ux1}\n"
