@@ -221,7 +221,7 @@ class CylinderGroup:
 
         return 1. / distance
 
-    def visualise(self, max_weight: int, lenience: float = .6) -> None:
+    def visualise(self, ax: plt.Axes, max_weight: int, lenience: float = .6) -> None:
         """
         Sketches the cylinders within this group in their appropriate locations.
         :param int max_weight: The maximum weight the container can hold.

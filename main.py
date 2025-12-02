@@ -1,6 +1,7 @@
 from population import Population
 from config import CYLINDER_SIDES
 import matplotlib.pyplot as plt
+from numpy import ndarray
 from math import sqrt
 
 
@@ -22,11 +23,16 @@ def run_ga(*, population_size: int = 50, num_cylinders: int = 5, mutation_rate: 
     fig, ax = plt.subplots(int(n_row_col), int(n_row_col), figsize=(10, 10))
     fig.patch.set_facecolor("#01364C")
 
+    if type(ax) is ndarray:
+        ax = ax.flatten()
+
     population.create_containers(fig, ax)
 
-    # For each bin generate its own initial population and evolve them.
+    # For each bin generate its own initial population and evolve them, whilst storing each animation
+    animations = []
     for i in range(population.bins.total):
-        population.generate_groups(i)
+        if not population.generate_groups(i):  # checks whether there's any need to evolve this bin
+            continue  # Skip the evolving process when there's no need.
 
         for generation in range(max_generations):
             population.evolve(i)
@@ -34,8 +40,9 @@ def run_ga(*, population_size: int = 50, num_cylinders: int = 5, mutation_rate: 
                 # if generation % 10 == 0:
                 #     population.best_cylinder_group.visualise(max_weight)
 
-        population.create_evolution_anim(i)
+        animations.append(population.create_evolution_anim(i))
 
+    fig.tight_layout()
     plt.show()
 
 
@@ -46,5 +53,5 @@ if __name__ == "__main__":
         mutation_rate=.1,
         max_generations=100,
         cylinder_sides=CYLINDER_SIDES,
-        max_weight=10400
+        max_weight=3500
     )

@@ -1,3 +1,4 @@
+from matplotlib.animation import FuncAnimation
 from matplotlib.artist import Artist
 from matplotlib.patches import Rectangle
 from matplotlib.lines import Line2D
@@ -20,7 +21,7 @@ class Container:
         self._cylinder_patches: List[CustomCircle] = []
 
         self._com_marker: Union[Line2D, None] = None
-        self._title: Text = self._ax.set_title("", color="#F7F8F9", fontsize=14, pad=20, weight="bold")
+        self._title: Text = self._ax.set_title("", color="#F7F8F9", fontsize=14, pad=20, weight="bold", wrap=True)
 
     @property
     def best_cylinder_group(self) -> Union[CylinderGroup, None]:
@@ -109,6 +110,18 @@ class Container:
         self._ax.set_facecolor(face_colour)
 
         self._ax.legend(loc='upper right', facecolor=face_colour, edgecolor=legend_colour, labelcolor=tick_colour, framealpha=0.9)
+
+    def draw(self) -> None:
+        """
+        Draws everything in a pre-arranged order. The only thing that isn't drawn or set is the title.
+        :return: None
+        """
+        self.draw_acceptance_range()
+        self.draw_centre()
+        self.draw_patches()  # adds the cylinder patches at their initial positions onto the axes.
+        self.draw_com_marker()
+
+        self.setup_axis()  # Saved last to ensure all labels will be accounted for in the legend.
 
 
 class AnimatedContainer(Container):
@@ -227,11 +240,15 @@ class AnimatedContainer(Container):
 
         return self._cylinder_patches
 
-    def ready_animation(self) -> None:
+    def ready_animation(self) -> Union[FuncAnimation, None]:
         """
         An override of the child method.
-        :return: None
+        :return: FuncAnimation, so the animation won't be deleted on the end of this function call.
         """
         self.__max_frames = (len(self.__saved_generations) - 1) * self.__fpp  # calculates the total number of frames for this animation.
-        _ = animation.FuncAnimation(fig=self._fig, func=self.update, frames=self.__max_frames, interval=0, repeat=False)
+
+        if self.__max_frames:
+            return animation.FuncAnimation(fig=self._fig, func=self.update, frames=self.__max_frames, interval=0, repeat=False)
+
+        return None
 
