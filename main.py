@@ -2,19 +2,16 @@ from population import Population
 from config import CYLINDER_SIDES
 import matplotlib.pyplot as plt
 from numpy import ndarray
+from typing import Tuple
 from math import sqrt
 
 
-def run_ga(*, population_size: int = 50, num_cylinders: int = 5, mutation_rate: float = .1, max_generations: int = 100,
-           cylinder_sides: int = CYLINDER_SIDES, max_weight: int = 10_000):
+def create_subplots(population: Population) -> Tuple[plt.Figure, plt.Axes]:
     """
-    Runs the genetic algorithm for the cargo loading problem provided.
-    :return: None
+    Creates subplots depending on the quantity of how many cylinders that were binned.
+    :param Population population: Population obj.
+    :return: Tuple[plt.Figure, plt.Axes]
     """
-    # Init population and bin cylinders
-    population = Population(population_size, num_cylinders, mutation_rate, cylinder_sides, max_weight)
-    population.bin_cylinders()
-
     # Create square-sized subplot to store animations of different bins
     n_row_col = sqrt(population.bins.total)
     if int(n_row_col) != n_row_col:
@@ -23,8 +20,29 @@ def run_ga(*, population_size: int = 50, num_cylinders: int = 5, mutation_rate: 
     fig, ax = plt.subplots(int(n_row_col), int(n_row_col), figsize=(10, 10))
     fig.patch.set_facecolor("#01364C")
 
-    if type(ax) is ndarray:
+    if type(ax) is ndarray:  # if there are multiple bins to consider
         ax = ax.flatten()
+
+        # Hide the Axes that will not be used.
+        for axes in ax[population.bins.total:]:
+            axes.set_visible(False)
+
+        fig.tight_layout()
+
+    return fig, ax
+
+
+def run_ga(*, population_size: int = 50, num_cylinders: int = 5, mutation_rate: float = .1, max_generations: int = 100,
+           cylinder_sides: int = CYLINDER_SIDES, max_weight: int = 10_000) -> None:
+    """
+    Runs the genetic algorithm for the cargo loading problem provided.
+    :return: None
+    """
+    # Init population and bin cylinders
+    population = Population(population_size, num_cylinders, mutation_rate, cylinder_sides, max_weight)
+    population.bin_cylinders()
+
+    fig, ax = create_subplots(population)
 
     population.create_containers(fig, ax)
 
@@ -42,7 +60,6 @@ def run_ga(*, population_size: int = 50, num_cylinders: int = 5, mutation_rate: 
 
         animations.append(population.create_evolution_anim(i))
 
-    fig.tight_layout()
     plt.show()
 
 
@@ -53,5 +70,5 @@ if __name__ == "__main__":
         mutation_rate=.1,
         max_generations=100,
         cylinder_sides=CYLINDER_SIDES,
-        max_weight=3500
+        max_weight=13500
     )

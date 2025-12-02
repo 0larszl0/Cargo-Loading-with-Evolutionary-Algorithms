@@ -201,13 +201,13 @@ class AnimatedContainer(Container):
         match title_option:
             case 1:
                 self.update_title(
-                    f"Moving from the last best generation ({self.__saved_generations[self.__save_index][0]}) to new best generation ({self.__saved_generations[self.__save_index + 1][0]})\n"
+                    f"Moving from Generation ({self.__saved_generations[self.__save_index][0]}) to Generation ({self.__saved_generations[self.__save_index + 1][0]})\n"
                     f"From fitness: {self.__saved_generations[self.__save_index][1]} to {self.__saved_generations[self.__save_index + 1][1]}"
                 )
 
             case 2:
                 self.update_title(
-                    f"The best packing found was within Generation {self.__saved_generations[self.__save_index][0]}\n"
+                    f"Best pack found at Generation {self.__saved_generations[self.__save_index][0]}\n"
                     f"Fitness: {self.__saved_generations[self.__save_index][1]}"
                 )
 
@@ -250,5 +250,6 @@ class AnimatedContainer(Container):
         if self.__max_frames:
             return animation.FuncAnimation(fig=self._fig, func=self.update, frames=self.__max_frames, interval=0, repeat=False)
 
+        self.choose_title(self.BEST_TITLE)
         return None
 
