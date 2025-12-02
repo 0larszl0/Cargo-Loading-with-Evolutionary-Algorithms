@@ -1,3 +1,4 @@
+from event_manager import EventManager
 from population import Population
 from config import CYLINDER_SIDES
 import matplotlib.pyplot as plt
@@ -6,11 +7,11 @@ from typing import Tuple
 from math import sqrt
 
 
-def create_subplots(population: Population) -> Tuple[plt.Figure, plt.Axes]:
+def create_subplots(population: Population) -> Tuple[plt.Figure, plt.Axes, EventManager]:
     """
     Creates subplots depending on the quantity of how many cylinders that were binned.
     :param Population population: Population obj.
-    :return: Tuple[plt.Figure, plt.Axes]
+    :return: Tuple[plt.Figure, plt.Axes, EventManager]
     """
     # Create square-sized subplot to store animations of different bins
     n_row_col = sqrt(population.bins.total)
@@ -29,7 +30,7 @@ def create_subplots(population: Population) -> Tuple[plt.Figure, plt.Axes]:
 
         fig.tight_layout()
 
-    return fig, ax
+    return fig, ax, EventManager(fig)
 
 
 def run_ga(*, population_size: int = 50, num_cylinders: int = 5, mutation_rate: float = .1, max_generations: int = 100,
@@ -42,8 +43,9 @@ def run_ga(*, population_size: int = 50, num_cylinders: int = 5, mutation_rate: 
     population = Population(population_size, num_cylinders, mutation_rate, cylinder_sides, max_weight)
     population.bin_cylinders()
 
-    fig, ax = create_subplots(population)
+    fig, ax, event_manager = create_subplots(population)
 
+    population.set_event_manager(event_manager)
     population.create_containers(fig, ax)
 
     # For each bin generate its own initial population and evolve them, whilst storing each animation
@@ -70,5 +72,8 @@ if __name__ == "__main__":
         mutation_rate=.1,
         max_generations=100,
         cylinder_sides=CYLINDER_SIDES,
-        max_weight=13500
+        max_weight=3500
     )
+
+
+    # PERHAPS MAKE EVENT MANAGER A PROPERTY OF THE CONTAINERS INSTEAD OF VIA FUNCTIONS.

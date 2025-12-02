@@ -91,3 +91,11 @@ class CustomCircle(Circle):
 
         ax.add_patch(self)
 
+    def toggle_annotations(self) -> None:
+        """
+        Toggle the visibility of each annotation this Circle has.
+        :return: None
+        """
+        for annotation in self.__annotations:
+            annotation.set_visible(not annotation.get_visible())
+

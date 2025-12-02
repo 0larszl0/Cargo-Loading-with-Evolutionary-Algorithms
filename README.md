@@ -15,3 +15,12 @@ a specific (x,y) coordinate. The goal is to place all circles subject to constra
 container (to prevent tipping during transport).
 - **Weight limit**: Total weight cannot exceed the container's maximum capacity.
 - **Loading order**: Cylinders are loaded from the rear and cannot be moved once placed
+
+---
+My written reports for this problem will be released soon....
+
+---
+### Features
+1. Instead of discarding cylinders, each cylinder will be sorted into bins. Each bin will be optimised to meet this problems objectives.
+2. Animations. Cylinders will move to the next optimal position, before pausing to show the optimal solution found up to 'x' generation, before continuing to move to the next optimal positions. Visualisations will only be static if there's only one cylinder to solve for, or only one optimal solution was found within 'n' generations.
+3. Events: Press 'a' to toggle annotations of every circle, and 'l' to toggle the legend of each plot.

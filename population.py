@@ -1,5 +1,6 @@
 from cylinders import Cylinder, CylinderGroup, CYLINDER_SIDES, CYLINDERS
 from canvas import AnimatedContainer, Container, FuncAnimation
+from event_manager import EventManager
 from utils import get_random_indices
 from numpy import array, ndarray
 from crossovers import *
@@ -104,6 +105,8 @@ class Population:
 
         self.__containers = []
 
+        self.__event_manager: EventManager | None = None
+
     @property
     def best_cylinder_group(self) -> CylinderGroup:
         return self.__best_cylinder_group
@@ -112,9 +115,13 @@ class Population:
     def bins(self) -> Bins:
         return self.__bins
 
-    @property
-    def containers(self) -> List[Union[AnimatedContainer, None]]:
-        return self.__containers
+    def set_event_manager(self, event_manager: EventManager) -> None:
+        """
+        Sets the event manager for the canvas this population is drawing onto.
+        :param EventManager event_manager: The event manager of the main figure
+        :return: None
+        """
+        self.__event_manager = event_manager
 
     def bin_cylinders(self) -> None:
         """
@@ -164,12 +171,20 @@ class Population:
         )
 
         self.__containers[bin_focus].best_cylinder_group = self.__best_cylinder_group
-        self.__containers[bin_focus].add_cylinders()
+        self.__containers[bin_focus].add_cylinders(self.__event_manager)
 
         if type(self.__containers[bin_focus]) is Container:  # checks if this bin is static, i.e. only one cylinder exists
             # if static then draw the cylinders statically
             self.__containers[bin_focus].draw()
             self.__containers[bin_focus].update_title("No evolution needed for singular cylinder.")
+
+            # Log this
+            # print(f"# {'-' * 26} \033[1mRecorded data for Bin {bin_focus}\033[0m {'-' * 26} #")
+            # for cylinder_patch, save in current_container.save_states.items():
+            #     print(f"{cylinder_patch}:\n"
+            #           f"\t- Centre history:\t{', '.join([str(centre) for centre in save[0]])}\n"
+            #           f"\t- Increments:\t\t{', '.join([str(centre) for centre in save[1]])}\n")
+
             return 0
 
         # Need to create clones of each Cylinder, instead of taking focussed_bin's cylinder as it will take a reference
@@ -314,7 +329,7 @@ class Population:
         current_container.draw()
         current_container.choose_title(current_container.TRANSITION_TITLE)
 
-        print(f"# {'-'*26}\033[1m Recorded data for Bin {bin_focus}\033[0m {'-'*26} #")
+        print(f"# {'-'*26} \033[1mRecorded data for Bin {bin_focus}\033[0m {'-'*26} #")
         for cylinder_patch, save in current_container.save_states.items():
             print(f"{cylinder_patch}:\n"
                   f"\t- Centre history:\t{', '.join([str(centre) for centre in save[0]])}\n"

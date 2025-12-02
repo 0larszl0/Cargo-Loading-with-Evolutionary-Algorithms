@@ -11,6 +11,7 @@ from custom_patches.circle import CustomCircle
 from typing import List, Dict, Tuple, Iterable, Union
 from utils import com
 from time import sleep
+from event_manager import EventManager
 
 
 class Container:
@@ -31,7 +32,7 @@ class Container:
     def best_cylinder_group(self, new_best: CylinderGroup) -> None:
         self._best_cylinder_group = new_best
 
-    def add_cylinders(self) -> None:
+    def add_cylinders(self, event_manager: EventManager) -> None:
         """
         Creates CustomCircle objects that correspond to each cylinder in the best_cylinder_group's cylinders respectively.
         :return: None
@@ -40,9 +41,10 @@ class Container:
             raise Exception("\r\033[1m\033[31mCustom Exception: Ensure that the best cylinder group is set before calling Container.add_cylinders()\033[0m")
 
         for cylinder in self._best_cylinder_group.cylinders:
-            # append a CustomCircle object at position (0, 0), this will be changed when saving states.
-            self._cylinder_patches.append(
-                CustomCircle((0, 0), cylinder.radius, cylinder.weight, fill=False, edgecolor="#99D9DD", linewidth=2))
+            cylinder_patch = CustomCircle(cylinder.centre, cylinder.radius, cylinder.weight, fill=False, edgecolor="#99D9DD", linewidth=2)
+
+            self._cylinder_patches.append(cylinder_patch)
+            event_manager.cylinder_patches += [cylinder_patch]
 
     def draw_patches(self) -> None:
         """
