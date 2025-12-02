@@ -31,6 +31,9 @@ class CustomCircle(Circle):
             Circle(xy, radius * 0.05, edgecolor=kwargs["edgecolor"], facecolor=kwargs["edgecolor"])  # centre marker
         ]
 
+    def __str__(self):
+        return f"CustomCircle (\033[4m{self.__repr__().split('at ')[1][:-1]}\033[0m)"
+
     def __set_annotations(self, xy: Tuple[float, float]) -> None:
         """
         Sets the positions of the annotations within this circle

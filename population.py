@@ -4,7 +4,9 @@ from utils import get_random_indices
 from numpy import array, ndarray
 from crossovers import *
 
-from typing import List, Tuple
+from typing import List, Tuple, Union
+from matplotlib.pyplot import Figure, Axes
+
 import random
 
 
@@ -42,10 +44,15 @@ class Bins:
     def __init__(self, max_weight):
         self.__max_weight = max_weight
         self.__bins = [Bin(max_weight)]
+        self.__total_bins = 1
 
     @property
     def bins(self) -> List[Bin]:
         return self.__bins
+
+    @property
+    def total(self) -> int:
+        return self.__total_bins
 
     def pack_cylinder_ff(self, cylinder: Cylinder) -> None:
         """
@@ -63,6 +70,7 @@ class Bins:
         # when all the existing bins couldn't pack the new cylinder, create a new bin and add the cylinder in there.
         self.__bins.append(Bin(self.__max_weight))
         self.__bins[-1].add(cylinder)
+        self.__total_bins += 1
 
 
 class Population:
@@ -90,11 +98,15 @@ class Population:
         for i, cylinder in enumerate(self.__cylinders):
             print(f"Cylinder {i+1}:\t- Weight: {cylinder.weight}\t- Centre: {cylinder.centre}\t- Radius: {cylinder.radius}")
 
-        self.__animated_container = AnimatedContainer(30, figsize=(10, 10))
+        self.__animated_containers: List[AnimatedContainer] = []
 
     @property
     def best_cylinder_group(self) -> CylinderGroup:
         return self.__best_cylinder_group
+
+    @property
+    def bins(self) -> Bins:
+        return self.__bins
 
     def bin_cylinders(self) -> None:
         """
@@ -106,6 +118,21 @@ class Population:
 
         if not self.__bins.bins[0].cylinders:  # if no cylinders could be packed.
             raise Exception(f"\r\033[1m\033[31mCustom Exception: No cylinder can be packed with a maximum weight limit of: {self.__max_weight}")
+
+    def create_containers(self, fig: Figure, ax: Union[Axes, List[Axes]], fpp: int = 30) -> None:
+        """
+        Create a container visualisation object for each possible bin.
+        :param Figure fig: The figure the visualisation should be made onto.
+        :param Union[Axes, List[Axes]] ax: The Axes, or List of Axes, of available plots to draw onto.
+        :param int fpp: The frames per patch for the animation within each container.
+        :return: None
+        """
+        if self.__bins.total == 1:
+            self.__animated_containers.append(AnimatedContainer(fpp, fig, ax))
+            return
+
+        for i in range(self.__bins.total):
+            self.__animated_containers.append(AnimatedContainer(fpp, fig, ax[i]))
 
     def generate_groups(self, bin_focus: int = 0) -> None:
         """
@@ -130,8 +157,8 @@ class Population:
             focussed_bin.size(), self.__cylinder_sides, focussed_bin.weight
         )
 
-        self.__animated_container.best_cylinder_group = self.__best_cylinder_group
-        self.__animated_container.add_cylinders()
+        self.__animated_containers[bin_focus].best_cylinder_group = self.__best_cylinder_group
+        self.__animated_containers[bin_focus].add_cylinders()
 
     def tournament_selection(self, k: int = 3) -> CylinderGroup:
         """
@@ -221,13 +248,18 @@ class Population:
         best_cylinder_group_gen = max(self.__population, key=lambda x: x.fitness())
 
         # Check whether the best cylinder group in this generation group outperforms any previous ones.
-        print(best_cylinder_group_gen.fitness(), "---", self.__best_cylinder_group.fitness())
-        if best_cylinder_group_gen.fitness() > self.__best_cylinder_group.fitness():
+        current_fitness, new_fitness = self.__best_cylinder_group.fitness(), best_cylinder_group_gen.fitness()
+        if new_fitness > current_fitness:
+            print(f"# {'-'*20} \033[1mNew Solution found at Generation {self.__generations}\033[0m {'-'*20} #\n"
+                  f"{best_cylinder_group_gen}"
+                  f"New fitness: \033[1m{new_fitness}\033[0m\t\033[32m+{new_fitness - current_fitness}\033[0m (from {current_fitness})\n"
+                  f"{'='*80}\n")
+
             # Update the centre values of the Cylinders within the best cylinder group.
             for i, cylinder in enumerate(best_cylinder_group_gen.cylinders):
                 self.__best_cylinder_group.cylinders[i].centre = cylinder.centre
 
-            self.__animated_container.save_state(self.__generations)
+            self.__animated_containers[bin_focus].save_state(self.__generations)
 
         # - Create new population - #
         # Use the recycling method within existing cylinder groups to avoid creating many objects that will be unused.
@@ -248,20 +280,25 @@ class Population:
 
         self.__generations += 1
 
-    def show_evolution(self) -> None:
+    def create_evolution_anim(self, bin_focus: int = 0) -> None:
         """
         Uses the dynamic visualiser to illustrate the placement of cylinders between key generations.
         :return: None
         """
-        self.__animated_container.draw_acceptance_range()
-        self.__animated_container.draw_centre()
-        self.__animated_container.draw_patches()  # adds the cylinder patches at their initial positions onto the axes.
-        self.__animated_container.draw_com_marker()
+        current_container = self.__animated_containers[bin_focus]
 
-        print("\033[4mRecorded data\033[0m:")
-        print(f"Save states:\n{self.__animated_container.save_states}")
-        print(f"Saved generations: {self.__animated_container.saved_generations}")
+        current_container.draw_acceptance_range()
+        current_container.draw_centre()
+        current_container.draw_patches()  # adds the cylinder patches at their initial positions onto the axes.
+        current_container.draw_com_marker()
 
-        self.__animated_container.choose_title(self.__animated_container.TRANSITION_TITLE)
-        self.__animated_container.setup_axis()  # Saved penultimately to ensure all labels will be accounted for in the legend.
-        self.__animated_container.show()  # Show the animation.
+        print(f"# {'-'*26}\033[1m Recorded data for Bin {bin_focus}\033[0m {'-'*26} #")
+        for cylinder_patch, save in current_container.save_states.items():
+            print(f"{cylinder_patch}:\n"
+                  f"\t- Centre history:\t{', '.join([str(centre) for centre in save[0]])}\n"
+                  f"\t- Increments:\t\t{', '.join([str(centre) for centre in save[1]])}\n")
+
+        current_container.choose_title(current_container.TRANSITION_TITLE)
+        current_container.setup_axis()  # Saved penultimately to ensure all labels will be accounted for in the legend.
+        current_container.ready_animation()  # Ready the animation for that container/axes.
+

@@ -13,8 +13,8 @@ from time import sleep
 
 
 class Container:
-    def __init__(self, **subplot_kwargs):
-        self._fig, self._ax = plt.subplots(**subplot_kwargs)
+    def __init__(self, fig: plt.Figure, ax: plt.Axes):
+        self._fig, self._ax = fig, ax
 
         self._best_cylinder_group: Union[CylinderGroup, None] = None
         self._cylinder_patches: List[CustomCircle] = []
@@ -92,12 +92,8 @@ class Container:
         self._title.set_text(title)
         self._title.set_color(colour)
 
-
-        print("TITLE SET")
-        print(self._title.get_text())
-
     def setup_axis(self, *, spine_colour: str = "#F7F8F9", tick_colour: str = "#F7F8F9", grid_colour: str = "#F7F8F9",
-                   face_colour: str = "#01364C", legend_colour: str = "#F7F8F9", figure_face_colour: str = "#01364C") -> None:
+                   face_colour: str = "#01364C", legend_colour: str = "#F7F8F9") -> None:
         """
         Set aspect ratios, x & y limits, a title, colours and a legend.
         :return: None
@@ -114,23 +110,13 @@ class Container:
 
         self._ax.legend(loc='upper right', facecolor=face_colour, edgecolor=legend_colour, labelcolor=tick_colour, framealpha=0.9)
 
-        self._fig.patch.set_facecolor(figure_face_colour)
-
-    @staticmethod
-    def show() -> None:
-        """
-        Shows the figure containing all the artists.
-        :return: None
-        """
-        plt.show()
-
 
 class AnimatedContainer(Container):
     TRANSITION_TITLE = 1
     BEST_TITLE = 2
 
-    def __init__(self, fpp: int, **subplot_kwargs):
-        super().__init__(**subplot_kwargs)
+    def __init__(self, fpp: int, fig: plt.Figure, ax: plt.Axes):
+        super().__init__(fig, ax)
 
         # frames per patch, how many positions to move in between each optimal centre.
         # Say you're going from (8, y) -> (9, y), with fpp = 60, you have to move in increments of (9-8) / 60
@@ -144,7 +130,7 @@ class AnimatedContainer(Container):
         self.__saved_generations = []
 
     @property
-    def save_states(self) -> Dict[Cylinder, Tuple[float, float]]:
+    def save_states(self) -> Dict[Cylinder, List[List[Tuple[float, float]]]]:
         return self.__save_states
 
     @property
@@ -241,21 +227,11 @@ class AnimatedContainer(Container):
 
         return self._cylinder_patches
 
-    def show(self) -> None:
+    def ready_animation(self) -> None:
         """
         An override of the child method.
         :return: None
         """
         self.__max_frames = (len(self.__saved_generations) - 1) * self.__fpp  # calculates the total number of frames for this animation.
         _ = animation.FuncAnimation(fig=self._fig, func=self.update, frames=self.__max_frames, interval=0, repeat=False)
-        super().show()
 
-
-if __name__ == "__main__":
-    d = AnimatedContainer(60, figsize=(10, 10))
-
-    d.draw_acceptance_range()
-    d.draw_centre()
-    d.setup_axis()
-
-    plt.show()

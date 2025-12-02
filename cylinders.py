@@ -19,6 +19,12 @@ class Cylinder:
 
         self.__centre = (0., 0.)
 
+    def __str__(self):
+        return (f"Cylinder (\033[4m{self.__repr__().split('at ')[1][:-1]}\033[0m):"
+                f"\t- Centre: ({self.__centre[0]:.3f}, {self.__centre[1]:.3f})"
+                f"\t- Radius: {self.__radius}"
+                f"\t- Weight: {self.__weight}")
+
     @property
     def centre(self) -> Tuple[float, float]:
         return self.__centre
@@ -65,6 +71,11 @@ class CylinderGroup:
         # A group will contain a list of random position numbers for each cylinder, apart from the first as that is
         # to be placed in the centre of the container.
         self.__group = random.sample(range(num_cylinders * cylinder_sides), k=num_cylinders - 1)
+
+    def __str__(self):
+        return (f"CylinderGroup (\033[4m{self.__repr__().split('at ')[1][:-1]}\033[0m) contains:\n"
+                f"\t- {'\n\t- '.join([str(cylinder) for cylinder in self.__cylinders])}\n\n"
+                f"{'='*80}\n")
 
     @property
     def cylinders(self) -> List[Cylinder]:
