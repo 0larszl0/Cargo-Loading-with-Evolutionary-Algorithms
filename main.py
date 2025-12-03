@@ -44,9 +44,7 @@ def run_ga(*, population_size: int = 50, num_cylinders: int = 5, mutation_rate: 
     population.bin_cylinders()
 
     fig, ax, event_manager = create_subplots(population)
-
-    population.set_event_manager(event_manager)
-    population.create_containers(fig, ax)
+    population.create_containers(fig, ax, event_manager)
 
     # For each bin generate its own initial population and evolve them, whilst storing each animation
     animations = []
@@ -75,5 +73,4 @@ if __name__ == "__main__":
         max_weight=3500
     )
 
-
-    # PERHAPS MAKE EVENT MANAGER A PROPERTY OF THE CONTAINERS INSTEAD OF VIA FUNCTIONS.
+    # MAKE A CONFIG FOR SLIDING ANIMATION? I WONDER IF THE SLIDING ANIMATION WILL BE CONFUSED FOR THE LOADING ORDER CONSTRAINT

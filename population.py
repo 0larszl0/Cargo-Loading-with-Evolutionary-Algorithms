@@ -115,14 +115,6 @@ class Population:
     def bins(self) -> Bins:
         return self.__bins
 
-    def set_event_manager(self, event_manager: EventManager) -> None:
-        """
-        Sets the event manager for the canvas this population is drawing onto.
-        :param EventManager event_manager: The event manager of the main figure
-        :return: None
-        """
-        self.__event_manager = event_manager
-
     def bin_cylinders(self) -> None:
         """
         Groups cylinders into different bins using first fit bin packing, based on their weight.
@@ -138,24 +130,25 @@ class Population:
         for i, binn in enumerate(self.__bins.bins):
             print(f"\t\033[4mBin {i}\033[0m\n\t\t- {'\n\t\t- '.join([cylinder for cylinder in str(binn).split('\n')])}")
 
-    def create_containers(self, fig: Figure, ax: Union[Axes, ndarray[Axes]], fpp: int = 30) -> None:
+    def create_containers(self, fig: Figure, ax: Union[Axes, ndarray[Axes]], event_manager: EventManager, fpp: int = 30) -> None:
         """
         Create a container visualisation object for each possible bin.
         :param Figure fig: The figure the visualisation should be made onto.
         :param Union[Axes, ndarray[Axes]] ax: The Axes, or List of Axes, of available plots to draw onto.
+        :param EventManager event_manager: The event manager to add to each container.
         :param int fpp: The frames per patch for the animation within each container.
         :return: None
         """
         if self.__bins.total == 1:
-            self.__containers.append(AnimatedContainer(fpp, fig, ax))
+            self.__containers.append(AnimatedContainer(fpp, fig, ax, event_manager))
             return
 
         for i in range(self.__bins.total):
             if self.__bins.bins[i].size() == 1:  # if there's only one cylinder in a bin, prepare for it to be drawn statically
-                self.__containers.append(Container(fig, ax[i]))
+                self.__containers.append(Container(fig, ax[i], event_manager))
                 continue
 
-            self.__containers.append(AnimatedContainer(fpp, fig, ax[i]))
+            self.__containers.append(AnimatedContainer(fpp, fig, ax[i], event_manager))
 
     def generate_groups(self, bin_focus: int = 0) -> int:
         """
@@ -171,7 +164,7 @@ class Population:
         )
 
         self.__containers[bin_focus].best_cylinder_group = self.__best_cylinder_group
-        self.__containers[bin_focus].add_cylinders(self.__event_manager)
+        self.__containers[bin_focus].add_cylinders()
 
         if type(self.__containers[bin_focus]) is Container:  # checks if this bin is static, i.e. only one cylinder exists
             # if static then draw the cylinders statically
@@ -179,11 +172,9 @@ class Population:
             self.__containers[bin_focus].update_title("No evolution needed for singular cylinder.")
 
             # Log this
-            # print(f"# {'-' * 26} \033[1mRecorded data for Bin {bin_focus}\033[0m {'-' * 26} #")
-            # for cylinder_patch, save in current_container.save_states.items():
-            #     print(f"{cylinder_patch}:\n"
-            #           f"\t- Centre history:\t{', '.join([str(centre) for centre in save[0]])}\n"
-            #           f"\t- Increments:\t\t{', '.join([str(centre) for centre in save[1]])}\n")
+            cylinder = self.__containers[bin_focus].cylinder_patches[0]
+            print(f"# {'-' * 26} \033[1mRecorded data for Bin {bin_focus}\033[0m {'-' * 26} #")
+            print(f"{cylinder}:\n\t- Centre history:\t{cylinder.centre}\n\t- Increments:\n")
 
             return 0
 

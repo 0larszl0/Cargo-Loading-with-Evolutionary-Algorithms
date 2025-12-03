@@ -15,8 +15,9 @@ from event_manager import EventManager
 
 
 class Container:
-    def __init__(self, fig: plt.Figure, ax: plt.Axes):
+    def __init__(self, fig: plt.Figure, ax: plt.Axes, event_manager: EventManager):
         self._fig, self._ax = fig, ax
+        self._event_manager = event_manager
 
         self._best_cylinder_group: Union[CylinderGroup, None] = None
         self._cylinder_patches: List[CustomCircle] = []
@@ -32,7 +33,11 @@ class Container:
     def best_cylinder_group(self, new_best: CylinderGroup) -> None:
         self._best_cylinder_group = new_best
 
-    def add_cylinders(self, event_manager: EventManager) -> None:
+    @property
+    def cylinder_patches(self) -> List[CustomCircle]:
+        return self._cylinder_patches
+
+    def add_cylinders(self) -> None:
         """
         Creates CustomCircle objects that correspond to each cylinder in the best_cylinder_group's cylinders respectively.
         :return: None
@@ -44,7 +49,7 @@ class Container:
             cylinder_patch = CustomCircle(cylinder.centre, cylinder.radius, cylinder.weight, fill=False, edgecolor="#99D9DD", linewidth=2)
 
             self._cylinder_patches.append(cylinder_patch)
-            event_manager.cylinder_patches += [cylinder_patch]
+            self._event_manager.add_patch(cylinder_patch)
 
     def draw_patches(self) -> None:
         """
@@ -111,7 +116,7 @@ class Container:
         self._ax.tick_params(colors=tick_colour)
         self._ax.set_facecolor(face_colour)
 
-        self._ax.legend(loc='upper right', facecolor=face_colour, edgecolor=legend_colour, labelcolor=tick_colour, framealpha=0.9)
+        self._event_manager.add_legend(self._ax.legend(loc='upper right', facecolor=face_colour, edgecolor=legend_colour, labelcolor=tick_colour, framealpha=0.9))
 
     def draw(self) -> None:
         """
@@ -130,8 +135,8 @@ class AnimatedContainer(Container):
     TRANSITION_TITLE = 1
     BEST_TITLE = 2
 
-    def __init__(self, fpp: int, fig: plt.Figure, ax: plt.Axes):
-        super().__init__(fig, ax)
+    def __init__(self, fpp: int, fig: plt.Figure, ax: plt.Axes, event_manager: EventManager):
+        super().__init__(fig, ax, event_manager)
 
         # frames per patch, how many positions to move in between each optimal centre.
         # Say you're going from (8, y) -> (9, y), with fpp = 60, you have to move in increments of (9-8) / 60
