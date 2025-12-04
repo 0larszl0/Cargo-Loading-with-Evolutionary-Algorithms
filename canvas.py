@@ -143,8 +143,8 @@ class AnimatedContainer(Container):
         self.__fpp = fpp
 
         self.__max_frames = -1
-        self.__frame = -1
-        self.__save_index = -1
+        self.__frame = -2
+        self.__save_index = 0
 
         self.__save_states = {}  # {Cylinder patch: [[List of different centres deemed best at particular generations], [A list of increments between 'i' and 'i+1' centres]]}
         self.__saved_generations = []
@@ -224,16 +224,15 @@ class AnimatedContainer(Container):
         incorporating the amount of fps the animation will have.
         :return: Iterable[Artist]
         """
-        if self.__frame % self.__fpp == 0 and self.__frame >= self.__fpp:
-            self.__save_index += 1
+        # Deliberately stall the animation, so that the axes is given enough time to draw everything.
+        if self.__frame < 0:
+            self.__frame += 1
+            return self._cylinder_patches
 
-            # - When an optimal position is reached, the title will indicate so and pause, before moving on again - #
-            self.choose_title(self.BEST_TITLE)
+        # Checks whether the next optimal solution is reached, for it then pauses to signify so, and then continue transition again.
+        elif self.__frame % self.__fpp == 0:
             sleep(2.5)
             self.choose_title(self.TRANSITION_TITLE)
-
-        elif self.__frame == self.__max_frames - 1:  # When the last frame is met, change the title manually before the last frame ends.
-            self.choose_title(self.BEST_TITLE)
 
         # - Change patch positions - #
         for i, cylinder in enumerate(self._best_cylinder_group.cylinders):
@@ -243,6 +242,12 @@ class AnimatedContainer(Container):
             cylinder_patch.set_position((cylinder_patch.centre[0] + x_incr, cylinder_patch.centre[1] + y_incr))
 
         self.update_com_marker()
+
+        # When arriving at the last frame, change the index and the title manually.
+        if self.__frame % self.__fpp == self.__fpp - 1:
+            self.__save_index += 1
+            self.choose_title(self.BEST_TITLE)
+
         self.__frame += 1
 
         return self._cylinder_patches
@@ -252,7 +257,9 @@ class AnimatedContainer(Container):
         An override of the child method.
         :return: FuncAnimation, so the animation won't be deleted on the end of this function call.
         """
-        self.__max_frames = (len(self.__saved_generations) - 1) * self.__fpp  # calculates the total number of frames for this animation.
+        # calculates the total number of frames for this animation.
+        # +x, where x is the amount that self.__frames is below -1
+        self.__max_frames = ((len(self.__saved_generations) - 1) * self.__fpp) + (abs(self.__frame) - 1)
 
         if self.__max_frames:
             return animation.FuncAnimation(fig=self._fig, func=self.update, frames=self.__max_frames, interval=0, repeat=False)

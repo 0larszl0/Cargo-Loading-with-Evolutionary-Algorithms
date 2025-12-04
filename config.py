@@ -10,3 +10,6 @@ CYLINDERS = [
     (800, 1.5),  # Medium drum
     (300, 1.2)   # Light barrel
 ]
+
+# Whether a packing animation should gradually move to the next position or snap to it.
+SLIDE_ANIMATION = False

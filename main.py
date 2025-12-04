@@ -70,7 +70,7 @@ if __name__ == "__main__":
         mutation_rate=.1,
         max_generations=100,
         cylinder_sides=CYLINDER_SIDES,
-        max_weight=3500
+        max_weight=13500
     )
 
     # MAKE A CONFIG FOR SLIDING ANIMATION? I WONDER IF THE SLIDING ANIMATION WILL BE CONFUSED FOR THE LOADING ORDER CONSTRAINT

@@ -2,6 +2,7 @@ from cylinders import Cylinder, CylinderGroup, CYLINDER_SIDES, CYLINDERS
 from canvas import AnimatedContainer, Container, FuncAnimation
 from event_manager import EventManager
 from utils import get_random_indices
+from config import SLIDE_ANIMATION
 from numpy import array, ndarray
 from crossovers import *
 
@@ -139,6 +140,9 @@ class Population:
         :param int fpp: The frames per patch for the animation within each container.
         :return: None
         """
+        if not SLIDE_ANIMATION:
+            fpp = 1
+
         if self.__bins.total == 1:
             self.__containers.append(AnimatedContainer(fpp, fig, ax, event_manager))
             return
@@ -318,7 +322,7 @@ class Population:
         """
         current_container = self.__containers[bin_focus]
         current_container.draw()
-        current_container.choose_title(current_container.TRANSITION_TITLE)
+        current_container.choose_title(current_container.BEST_TITLE)
 
         print(f"# {'-'*26} \033[1mRecorded data for Bin {bin_focus}\033[0m {'-'*26} #")
         for cylinder_patch, save in current_container.save_states.items():
