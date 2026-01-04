@@ -1,12 +1,14 @@
+from config import CYLINDER_SIDES, EXECUTE_TEST_CASE, CONTAINER_HEIGHT, CONTAINER_WIDTH, VISUALISE_EVOLUTION, RECORD_RESULTS
 from event_manager import EventManager
 from population import Population
 from cylinders import Cylinder
-from config import CYLINDER_SIDES, EXECUTE_TEST_CASE, CONTAINER_HEIGHT, CONTAINER_WIDTH
 import matplotlib.pyplot as plt
 from numpy import ndarray
 from typing import Tuple, List
 from math import sqrt
 from TEST import test_instances
+from time import perf_counter
+from json import dump
 
 
 def create_subplots(population: Population) -> Tuple[plt.Figure, plt.Axes, EventManager]:
@@ -44,7 +46,8 @@ def run_ga(cylinders: List[Cylinder],
            max_weight: int = 10_000,
            cylinder_sides: int = CYLINDER_SIDES,
            container_width: float = CONTAINER_WIDTH,
-           container_height: float = CONTAINER_HEIGHT) -> None:
+           container_height: float = CONTAINER_HEIGHT,
+           visualise: bool = VISUALISE_EVOLUTION) -> None:
     """
     Runs the genetic algorithm for the cargo loading problem provided.
 
@@ -62,6 +65,7 @@ def run_ga(cylinders: List[Cylinder],
     :param int cylinder_sides: How many sides of a cylinder to compute for.
     :param float container_width: The width of the given container.
     :param float container_height: The height of the given container.
+    :param bool visualise: Whether to visualise the evolution of the population or not.
 
     :return: None
     """
@@ -72,9 +76,11 @@ def run_ga(cylinders: List[Cylinder],
     fig, ax, event_manager = create_subplots(population)
     population.create_containers(fig, ax, event_manager, container_width, container_height)
 
-    # For each bin generate its own initial population and evolve them, whilst storing each animation
-    animations = []
+    # For each bin generate its own initial population and evolve them, whilst storing each animation and the key events
+    animations, key_events = [], {}
     for i in range(population.bins.total):
+        start_time = perf_counter()
+
         if not population.generate_groups(i):  # checks whether there's any need to evolve this bin
             continue  # Skip the evolving process when there's no need.
 
@@ -82,8 +88,13 @@ def run_ga(cylinders: List[Cylinder],
             population.evolve(i)
 
         animations.append(population.create_evolution_anim(i))
+        key_events |= population.get_summary(perf_counter() - start_time, i)
 
-    plt.show()
+    if visualise: plt.show()
+
+    if RECORD_RESULTS:
+        with open(f"_TEST_RESULTS/instance[{EXECUTE_TEST_CASE}]-IPSUM.json", 'w') as json_file:
+            dump(key_events, json_file)
 
 
 if __name__ == "__main__":

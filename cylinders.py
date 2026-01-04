@@ -51,8 +51,6 @@ class Cylinder:
         return self.__centre[1] - self.__radius
 
 
-
-## NEED TO ADD CONTAINER_WIDTH AND HEIGHT HERE
 class BasicGroup:
     """Contains a basic collection of Cylinder objects and their properties as a group."""
 

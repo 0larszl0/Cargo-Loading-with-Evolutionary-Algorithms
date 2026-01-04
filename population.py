@@ -4,9 +4,10 @@ from event_manager import EventManager
 from utils import get_random_indices
 from config import SLIDE_ANIMATION, CYLINDER_TYPES
 from numpy import array, ndarray
+from config import EXECUTE_TEST_CASE
 from crossovers import *
 
-from typing import List, Tuple, Union
+from typing import List, Tuple, Union, Dict
 from matplotlib.pyplot import Figure, Axes
 
 import random
@@ -140,6 +141,8 @@ class Population:
         :param Figure fig: The figure the visualisation should be made onto.
         :param Union[Axes, ndarray[Axes]] ax: The Axes, or List of Axes, of available plots to draw onto.
         :param EventManager event_manager: The event manager to add to each container.
+        :param float container_width: The width of the container.
+        :param float container_height: The height of the container.
         :param int fpp: The frames per patch for the animation within each container.
         :return: None
         """
@@ -336,4 +339,23 @@ class Population:
                   f"\t- Increments:\t\t{', '.join([str(centre) for centre in save[1]])}\n")
 
         return current_container.ready_animation()  # Ready the animation for that container/axes.
+
+    def get_summary(self, time_taken: float, bin_focus: int = 0) -> Dict:
+        """
+        Using the save states and ..., generate a dictionary that contains a summary of the key events within this
+        populations evolution.
+        :param float time_taken: The time taken to reach the maximum number of generations.
+        :param int bin_focus: The bin of cylinders that's in focus.
+        :return: Dict.
+        """
+
+        # SOME THINGS TO RECORD:
+        #   - Test instance number
+        #   - Time for computation
+        #   - Selection method used
+        #   - Crossover method used
+        #   - History of evolving fitnesses
+        #   - Best overall fitness
+        #   - Details of each cylinder.
+        #   - The bin being focussed on.
 
