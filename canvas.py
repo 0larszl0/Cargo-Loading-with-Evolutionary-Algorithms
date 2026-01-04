@@ -3,7 +3,6 @@ from matplotlib.artist import Artist
 from matplotlib.patches import Rectangle
 from matplotlib.lines import Line2D
 from matplotlib import animation
-from config import CONTAINER_WIDTH, CONTAINER_HEIGHT
 import matplotlib.pyplot as plt
 from matplotlib.text import Text
 from cylinders import Cylinder, BasicGroup
@@ -15,9 +14,12 @@ from event_manager import EventManager
 
 
 class Container:
-    def __init__(self, fig: plt.Figure, ax: plt.Axes, event_manager: EventManager):
+    def __init__(self, fig: plt.Figure, ax: plt.Axes, event_manager: EventManager, width: float, height: float):
         self._fig, self._ax = fig, ax
         self._event_manager = event_manager
+
+        self._width = width
+        self._height = height
 
         self._best_cylinder_group: Union[BasicGroup, None] = None
         self._cylinder_patches: List[CustomCircle] = []
@@ -66,8 +68,8 @@ class Container:
         :param str rect_color: The hex-colour of the rectangle's outline.
         :return: None
         """
-        wbc_width, wbc_height = CONTAINER_WIDTH * weight_range, CONTAINER_HEIGHT * weight_range
-        wbc_pos = ((CONTAINER_WIDTH - wbc_width) / 2, (CONTAINER_HEIGHT - wbc_height) / 2)
+        wbc_width, wbc_height = self._width * weight_range, self._height * weight_range
+        wbc_pos = ((self._width - wbc_width) / 2, (self._height - wbc_height) / 2)
 
         wbc = Rectangle(wbc_pos, wbc_width, wbc_height, fill=False, edgecolor=rect_color, linewidth=2, linestyle="--", label="Central container")
 
@@ -79,7 +81,7 @@ class Container:
         :param str marker_colour: The hex-colour of the marker.
         :return: None
         """
-        self._ax.plot(CONTAINER_WIDTH / 2, CONTAINER_HEIGHT / 2, 'x', color=marker_colour, markersize=6, markeredgewidth=3, label='Origin')
+        self._ax.plot(self._width / 2, self._height / 2, 'x', color=marker_colour, markersize=6, markeredgewidth=3, label='Origin')
 
     def draw_com_marker(self) -> None:
         """
@@ -108,8 +110,8 @@ class Container:
         """
         # - Set up axis - #
         self._ax.set_aspect("equal")
-        self._ax.set_xlim(0, CONTAINER_WIDTH)
-        self._ax.set_ylim(0, CONTAINER_HEIGHT)
+        self._ax.set_xlim(0, self._width)
+        self._ax.set_ylim(0, self._height)
 
         self._ax.grid(True, alpha=.15, color=grid_colour)
         self._ax.spines[:].set_color(spine_colour)
@@ -135,8 +137,8 @@ class AnimatedContainer(Container):
     TRANSITION_TITLE = 1
     BEST_TITLE = 2
 
-    def __init__(self, fpp: int, fig: plt.Figure, ax: plt.Axes, event_manager: EventManager):
-        super().__init__(fig, ax, event_manager)
+    def __init__(self, fpp: int, fig: plt.Figure, ax: plt.Axes, event_manager: EventManager, width: float, height: float):
+        super().__init__(fig, ax, event_manager, width, height)
 
         # frames per patch, how many positions to move in between each optimal centre.
         # Say you're going from (8, y) -> (9, y), with fpp = 60, you have to move in increments of (9-8) / 60

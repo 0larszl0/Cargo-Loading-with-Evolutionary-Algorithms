@@ -1,6 +1,5 @@
 from typing import List, Tuple
 from math import dist
-from config import *
 from utils import *
 import random
 
@@ -10,7 +9,7 @@ random.seed(42)
 class Cylinder:
     """Represents a cylinder of a particular type."""
 
-    def __init__(self, sides: int, radius: float, weight: int):
+    def __init__(self, sides: int, radius: float, weight: float):
         self.__sides = sides
         self.__radius = radius
         self.__weight = weight
@@ -36,7 +35,7 @@ class Cylinder:
         return self.__radius
 
     @property
-    def weight(self) -> int:
+    def weight(self) -> float:
         return self.__weight
 
     def left(self) -> float:
@@ -52,15 +51,20 @@ class Cylinder:
         return self.__centre[1] - self.__radius
 
 
+
+## NEED TO ADD CONTAINER_WIDTH AND HEIGHT HERE
 class BasicGroup:
     """Contains a basic collection of Cylinder objects and their properties as a group."""
 
-    def __init__(self, cylinders: List[Cylinder], num_cylinders: int, cylinder_sides: int):
+    def __init__(self, cylinders: List[Cylinder], num_cylinders: int, cylinder_sides: int, container_width: float, container_height: float):
         self._cylinders = cylinders
         self._cylinder_sides = cylinder_sides
         self._num_cylinders = num_cylinders
 
         self._weight = sum(cylinder.weight for cylinder in cylinders)
+
+        self._container_width = container_width
+        self._container_height = container_height
 
     @property
     def cylinders(self) -> List[Cylinder]:
@@ -76,7 +80,7 @@ class BasicGroup:
         (shorter distance = higher fitness)
         :return: -> float
         """
-        distance = dist(com(self._cylinders, self._weight), (CONTAINER_WIDTH / 2, CONTAINER_HEIGHT / 2))
+        distance = dist(com(self._cylinders, self._weight), (self._container_width / 2, self._container_height / 2))
 
         if distance == 0:  # if the packed COM is at the centre of the container.
             return float("inf")
@@ -90,12 +94,12 @@ class CylinderGroup(BasicGroup):
     position.
     """
 
-    def __init__(self, cylinders: List[Cylinder], num_cylinders: int, cylinder_sides: int, bin_weight: int):
-        super().__init__(cylinders, num_cylinders, cylinder_sides)
+    def __init__(self, cylinders: List[Cylinder], num_cylinders: int, cylinder_sides: int, container_width: float, container_height: float):
+        super().__init__(cylinders, num_cylinders, cylinder_sides, container_width, container_height)
         self.__decoded_cylinders = cylinders[:1]
 
         # Sets the first cylinder's centre to the middle of the container.
-        self._cylinders[0].centre = (CONTAINER_WIDTH / 2, CONTAINER_HEIGHT / 2)
+        self._cylinders[0].centre = (container_width / 2, container_height / 2)
 
         # A group will contain a list of random position numbers for each cylinder, apart from the first as that is
         # to be placed in the centre of the container.
@@ -216,8 +220,8 @@ class CylinderGroup(BasicGroup):
 
         # - Container-based - #
         # Check if cylinder fits within the container based on its current position.
-        if (cylinder.left() < 0 or cylinder.right() > CONTAINER_WIDTH) or \
-                (cylinder.bottom() < 0 or cylinder.top() > CONTAINER_HEIGHT):
+        if (cylinder.left() < 0 or cylinder.right() > self._container_width) or \
+                (cylinder.bottom() < 0 or cylinder.top() > self._container_height):
             cprint(debug, "\033[31m\t---- Doesn't fit in container ----\033[0m")
 
             # in the case it's not fully in the container, move to the next position
@@ -247,7 +251,7 @@ class CylinderGroup(BasicGroup):
         AN OVERRIDE THAT USES THE DECODED CYLINDERS INSTEAD OF THE INITIAL CYLINDERS.
         :return: -> float
         """
-        distance = dist(com(self.__decoded_cylinders, self._weight), (CONTAINER_WIDTH / 2, CONTAINER_HEIGHT / 2))
+        distance = dist(com(self.__decoded_cylinders, self._weight), (self._container_width / 2, self._container_height / 2))
         if distance == 0:  # if the packed COM is at the centre of the container.
             return float("inf")
 

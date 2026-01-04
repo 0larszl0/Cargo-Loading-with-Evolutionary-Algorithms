@@ -1,8 +1,8 @@
-from cylinders import Cylinder, BasicGroup, CylinderGroup, CYLINDER_SIDES, CYLINDERS
+from cylinders import Cylinder, BasicGroup, CylinderGroup
 from canvas import AnimatedContainer, Container, FuncAnimation
 from event_manager import EventManager
 from utils import get_random_indices
-from config import SLIDE_ANIMATION
+from config import SLIDE_ANIMATION, CYLINDER_TYPES
 from numpy import array, ndarray
 from crossovers import *
 
@@ -83,7 +83,7 @@ class Bins:
 class Population:
     """Manages a population of individuals and evolutionary operations inside a container."""
 
-    def __init__(self, size: int, num_cylinders: int, mutation_rate: float, cylinder_sides: int, max_weight):
+    def __init__(self, size: int, cylinders: List[Cylinder], num_cylinders: int, mutation_rate: float, cylinder_sides: int, max_weight: float):
         self.__size = size
         self.__mutation_rate = mutation_rate
         self.__cylinder_sides = cylinder_sides
@@ -95,8 +95,12 @@ class Population:
         self.__best_cylinder_group: BasicGroup | None = None
 
         # - Initialise cylinders - #
-        # Get a random selection of different cylinder types and save them as objects
-        self.__cylinders = [Cylinder(CYLINDER_SIDES, diameter / 2, weight) for weight, diameter in random.choices(CYLINDERS, k=num_cylinders)]
+        self.__cylinders = cylinders
+
+        # Check whether a list of cylinders has been passed through
+        if not cylinders:
+            # Get a random selection of different cylinder types and save them as objects
+            self.__cylinders = [Cylinder(cylinder_sides, diameter / 2, weight) for weight, diameter in random.choices(CYLINDER_TYPES, k=num_cylinders)]
 
         # Sorts the cylinders in descending order based on size (weight)
         self.__cylinders = sorted(self.__cylinders, reverse=True, key=lambda x: x.weight)
@@ -105,6 +109,8 @@ class Population:
         for cylinder in self.__cylinders: print(cylinder)
 
         self.__containers = []
+        self.__container_width = -1.
+        self.__container_height = -1.
 
         self.__event_manager: EventManager | None = None
 
@@ -127,7 +133,8 @@ class Population:
         for i, binn in enumerate(self.__bins.bins):
             print(f"\t\033[4mBin {i}\033[0m\n\t\t- {'\n\t\t- '.join([cylinder for cylinder in str(binn).split('\n')])}")
 
-    def create_containers(self, fig: Figure, ax: Union[Axes, ndarray[Axes]], event_manager: EventManager, fpp: int = 30) -> None:
+    def create_containers(self, fig: Figure, ax: Union[Axes, ndarray[Axes]], event_manager: EventManager,
+                          container_width: float, container_height: float, fpp: int = 30) -> None:
         """
         Create a container visualisation object for each possible bin.
         :param Figure fig: The figure the visualisation should be made onto.
@@ -136,19 +143,22 @@ class Population:
         :param int fpp: The frames per patch for the animation within each container.
         :return: None
         """
+        self.__container_width = container_width
+        self.__container_height = container_height
+
         if not SLIDE_ANIMATION:
             fpp = 1
 
         if self.__bins.total == 1:
-            self.__containers.append(AnimatedContainer(fpp, fig, ax, event_manager))
+            self.__containers.append(AnimatedContainer(fpp, fig, ax, event_manager, container_width, container_height))
             return
 
         for i in range(self.__bins.total):
             if self.__bins.bins[i].size() == 1:  # if there's only one cylinder in a bin, prepare for it to be drawn statically
-                self.__containers.append(Container(fig, ax[i], event_manager))
+                self.__containers.append(Container(fig, ax[i], event_manager, container_width, container_height))
                 continue
 
-            self.__containers.append(AnimatedContainer(fpp, fig, ax[i], event_manager))
+            self.__containers.append(AnimatedContainer(fpp, fig, ax[i], event_manager, container_width, container_height))
 
     def generate_groups(self, bin_focus: int = 0) -> int:
         """
@@ -159,8 +169,8 @@ class Population:
         focussed_bin = self.__bins.bins[bin_focus]
 
         self.__best_cylinder_group = BasicGroup(
-            [Cylinder(CYLINDER_SIDES, cylinder.radius, cylinder.weight) for cylinder in focussed_bin.cylinders],
-            focussed_bin.size(), self.__cylinder_sides
+            [Cylinder(self.__cylinder_sides, cylinder.radius, cylinder.weight) for cylinder in focussed_bin.cylinders],
+            focussed_bin.size(), self.__cylinder_sides, self.__container_width, self.__container_height
         )
 
         self.__containers[bin_focus].best_cylinder_group = self.__best_cylinder_group
@@ -182,8 +192,8 @@ class Population:
         # of each class, thus essentially sharing the same cylinder's amongst each group, instead of having their own.
         self.__population = [
             CylinderGroup(
-                [Cylinder(CYLINDER_SIDES, cylinder.radius, cylinder.weight) for cylinder in focussed_bin.cylinders],
-                focussed_bin.size(), self.__cylinder_sides, focussed_bin.weight
+                [Cylinder(self.__cylinder_sides, cylinder.radius, cylinder.weight) for cylinder in focussed_bin.cylinders],
+                focussed_bin.size(), self.__cylinder_sides, self.__container_width, self.__container_height
             ) for _ in range(self.__size)
         ]
 
@@ -260,7 +270,7 @@ class Population:
         for i in range(len(group)):  # Iterate across the length of the group
             if random.random() < self.__mutation_rate:  # if a mutation occurs
                 # choose a new random position numbers from the possible range subtracted by any already used positions.
-                group[i] = random.choice(list(set(range((i + 1) * CYLINDER_SIDES)).difference(existing_nums)))
+                group[i] = random.choice(list(set(range((i + 1) * self.__cylinder_sides)).difference(existing_nums)))
 
         return group
 

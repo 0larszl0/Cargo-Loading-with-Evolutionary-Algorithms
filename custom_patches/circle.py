@@ -7,7 +7,7 @@ import matplotlib as mpl
 
 
 class CustomCircle(Circle):
-    def __init__(self, xy: Tuple[float, float], radius: float, weight: int,
+    def __init__(self, xy: Tuple[float, float], radius: float, weight: float,
                  text_colour: str = "#F7F8F9", arrow_colour: str = "#AFD8DB", **kwargs):
         super().__init__(xy, radius, **kwargs)
 
@@ -57,7 +57,7 @@ class CustomCircle(Circle):
                     annotation.center = xy
 
     @property
-    def weight(self) -> int:
+    def weight(self) -> float:
         return self.__weight
 
     @property
