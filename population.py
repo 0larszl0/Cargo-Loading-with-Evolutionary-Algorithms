@@ -1,4 +1,4 @@
-from cylinders import Cylinder, CylinderGroup, CYLINDER_SIDES, CYLINDERS
+from cylinders import Cylinder, BasicGroup, CylinderGroup, CYLINDER_SIDES, CYLINDERS
 from canvas import AnimatedContainer, Container, FuncAnimation
 from event_manager import EventManager
 from utils import get_random_indices
@@ -92,13 +92,13 @@ class Population:
         self.__bins = Bins(max_weight)
 
         self.__generations = 0
-        self.__best_cylinder_group: CylinderGroup | None = None
+        self.__best_cylinder_group: BasicGroup | None = None
 
         # - Initialise cylinders - #
         # Get a random selection of different cylinder types and save them as objects
         self.__cylinders = [Cylinder(CYLINDER_SIDES, diameter / 2, weight) for weight, diameter in random.choices(CYLINDERS, k=num_cylinders)]
 
-        # Sorts the cylinders in descending order based on size (radius)
+        # Sorts the cylinders in descending order based on size (weight)
         self.__cylinders = sorted(self.__cylinders, reverse=True, key=lambda x: x.weight)
 
         print("+-----------\tInitialised cylinders\t-----------+")
@@ -107,10 +107,6 @@ class Population:
         self.__containers = []
 
         self.__event_manager: EventManager | None = None
-
-    @property
-    def best_cylinder_group(self) -> CylinderGroup:
-        return self.__best_cylinder_group
 
     @property
     def bins(self) -> Bins:
@@ -162,9 +158,9 @@ class Population:
         """
         focussed_bin = self.__bins.bins[bin_focus]
 
-        self.__best_cylinder_group = CylinderGroup(
+        self.__best_cylinder_group = BasicGroup(
             [Cylinder(CYLINDER_SIDES, cylinder.radius, cylinder.weight) for cylinder in focussed_bin.cylinders],
-            focussed_bin.size(), self.__cylinder_sides, focussed_bin.weight
+            focussed_bin.size(), self.__cylinder_sides
         )
 
         self.__containers[bin_focus].best_cylinder_group = self.__best_cylinder_group
@@ -283,16 +279,17 @@ class Population:
         best_cylinder_group_gen = max(self.__population, key=lambda x: x.fitness())
 
         # Check whether the best cylinder group in this generation group outperforms any previous ones.
-        current_fitness, new_fitness = self.__best_cylinder_group.fitness(), best_cylinder_group_gen.fitness()
-        if new_fitness > current_fitness:
+        best_fitness, best_gen_fitness = self.__best_cylinder_group.fitness(), best_cylinder_group_gen.fitness()
+        if best_gen_fitness > best_fitness:
             print(f"# {'-'*20} \033[1mNew Solution found at Generation {self.__generations}\033[0m {'-'*20} #\n"
                   f"{best_cylinder_group_gen}"
-                  f"New fitness: \033[1m{new_fitness}\033[0m\t\033[32m+{new_fitness - current_fitness}\033[0m (from {current_fitness})\n"
+                  f"New fitness: \033[1m{best_gen_fitness}\033[0m\t\033[32m+{best_gen_fitness - best_fitness}\033[0m (from {best_fitness})\n"
                   f"{'='*80}\n")
 
+            # ---- PROBLEM IS HERRE ---- #
             # Update the centre values of the Cylinders within the best cylinder group.
-            for i, cylinder in enumerate(best_cylinder_group_gen.cylinders):
-                self.__best_cylinder_group.cylinders[i].centre = cylinder.centre
+            for i, decoded_cylinder in enumerate(best_cylinder_group_gen.decoded_cylinders):
+                self.__best_cylinder_group.cylinders[i].centre = decoded_cylinder.centre
 
             self.__containers[bin_focus].save_state(self.__generations)
 
@@ -307,11 +304,9 @@ class Population:
             ) for _ in range(self.__size)
         ]
 
+        # - Recycle old cylinder groups - #
         for i, group in enumerate(self.__population):
-            group.recycle(
-                [Cylinder(CYLINDER_SIDES, cylinder.radius, cylinder.weight) for cylinder in self.__bins.bins[bin_focus].cylinders],
-                next_groups[i]
-            )
+            group.recycle(next_groups[i])
 
         self.__generations += 1
 

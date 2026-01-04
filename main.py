@@ -55,9 +55,6 @@ def run_ga(*, population_size: int = 50, num_cylinders: int = 5, mutation_rate: 
         for generation in range(max_generations):
             population.evolve(i)
 
-                # if generation % 10 == 0:
-                #     population.best_cylinder_group.visualise(max_weight)
-
         animations.append(population.create_evolution_anim(i))
 
     plt.show()
@@ -72,5 +69,3 @@ if __name__ == "__main__":
         cylinder_sides=CYLINDER_SIDES,
         max_weight=13500
     )
-
-    # MAKE A CONFIG FOR SLIDING ANIMATION? I WONDER IF THE SLIDING ANIMATION WILL BE CONFUSED FOR THE LOADING ORDER CONSTRAINT

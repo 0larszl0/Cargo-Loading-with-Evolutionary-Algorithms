@@ -6,7 +6,7 @@ from matplotlib import animation
 from config import CONTAINER_WIDTH, CONTAINER_HEIGHT
 import matplotlib.pyplot as plt
 from matplotlib.text import Text
-from cylinders import Cylinder, CylinderGroup
+from cylinders import Cylinder, BasicGroup
 from custom_patches.circle import CustomCircle
 from typing import List, Dict, Tuple, Iterable, Union
 from utils import com
@@ -19,18 +19,18 @@ class Container:
         self._fig, self._ax = fig, ax
         self._event_manager = event_manager
 
-        self._best_cylinder_group: Union[CylinderGroup, None] = None
+        self._best_cylinder_group: Union[BasicGroup, None] = None
         self._cylinder_patches: List[CustomCircle] = []
 
         self._com_marker: Union[Line2D, None] = None
         self._title: Text = self._ax.set_title("", color="#F7F8F9", fontsize=14, pad=20, weight="bold", wrap=True)
 
     @property
-    def best_cylinder_group(self) -> Union[CylinderGroup, None]:
+    def best_cylinder_group(self) -> Union[BasicGroup, None]:
         return self._best_cylinder_group
 
     @best_cylinder_group.setter
-    def best_cylinder_group(self, new_best: CylinderGroup) -> None:
+    def best_cylinder_group(self, new_best: BasicGroup) -> None:
         self._best_cylinder_group = new_best
 
     @property
