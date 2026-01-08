@@ -8,7 +8,8 @@ def uniform_crossover(group1: List[int], group2: List[int], *, bias: float = 0) 
     :param List[int] group1: A list of position numbers.
     :param List[int] group2: A list of position numbers.
     :param float bias: The amount of bias either of the group have. The range of values is [-0.5, 0.5], wherein the bias
-    is toward group1 and group2 respectively. So the closer to -0.5, greater than chance for
+    is toward group1 and group2 respectively. So the closer to -0.5, greater than chance for group1's values to remain,
+    whereas closer to 0.5, the more of a chance the values from group2 are kept.
     :return: List[int]
     """
 

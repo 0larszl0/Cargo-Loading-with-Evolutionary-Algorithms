@@ -77,7 +77,8 @@ def run_ga(cylinders: List[Cylinder],
     population.create_containers(fig, ax, event_manager, container_width, container_height)
 
     # For each bin generate its own initial population and evolve them, whilst storing each animation and the key events
-    animations, key_events = [], {}
+    animations = []
+    key_events = {}  # {'bin number': {summary of evolution in that bin}}
     for i in range(population.bins.total):
         start_time = perf_counter()
 
@@ -87,13 +88,19 @@ def run_ga(cylinders: List[Cylinder],
         for generation in range(max_generations):
             population.evolve(i)
 
-        animations.append(population.create_evolution_anim(i))
-        key_events |= population.get_summary(perf_counter() - start_time, i)
+        if visualise: animations.append(population.create_evolution_anim(i))
+        key_events[f"Bin {i}"] = population.get_summary(perf_counter() - start_time, i)
 
     if visualise: plt.show()
 
     if RECORD_RESULTS:
-        with open(f"_TEST_RESULTS/instance[{EXECUTE_TEST_CASE}]-IPSUM.json", 'w') as json_file:
+        smu, ctu, mut_rate = (
+            key_events["Bin 0"]["Selection Method Used"],
+            ''.join(map(lambda x: x[0], key_events["Bin 0"]["Crossover Technique Used"].split(' '))),
+            key_events["Bin 0"]["Mutation Rate"]
+        )
+
+        with open(f"_TEST_RESULTS/TEST_Instance[{EXECUTE_TEST_CASE}]-SMU[{smu}]-CTU[{ctu}]-MR[{mut_rate}].json", 'w') as json_file:
             dump(key_events, json_file)
 
 

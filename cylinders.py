@@ -9,46 +9,59 @@ random.seed(42)
 class Cylinder:
     """Represents a cylinder of a particular type."""
 
-    def __init__(self, sides: int, radius: float, weight: float):
-        self.__sides = sides
-        self.__radius = radius
-        self.__weight = weight
+    def __init__(self, sides: int, diameter: float, weight: float, *, id_: int = -1):
+        self._id = id(self)
+        if id_ != -1:
+            self._id = id_
 
-        self.__centre = (0., 0.)
+        self._sides = sides
+        self._diameter = diameter
+        self._radius = diameter / 2
+        self._weight = weight
+
+        self._centre = (0., 0.)
 
     def __str__(self):
         return (f"Cylinder (\033[4m{self.__repr__().split('at ')[1][:-1]}\033[0m):"
-                f"\t- Centre: ({self.__centre[0]:.3f}, {self.__centre[1]:.3f})"
-                f"\t- Radius: {self.__radius}"
-                f"\t- Weight: {self.__weight}")
+                f"\t- Centre: ({self._centre[0]:.3f}, {self._centre[1]:.3f})"
+                f"\t- Radius: {self._radius}"
+                f"\t- Weight: {self._weight}")
+
+    @property
+    def id(self) -> int:
+        return self._id
 
     @property
     def centre(self) -> Tuple[float, float]:
-        return self.__centre
+        return self._centre
 
     @centre.setter
     def centre(self, new_centre: Tuple[float, float]) -> None:
-        self.__centre = new_centre
+        self._centre = new_centre
+
+    @property
+    def diameter(self) -> float:
+        return self._diameter
 
     @property
     def radius(self) -> float:
-        return self.__radius
+        return self._radius
 
     @property
     def weight(self) -> float:
-        return self.__weight
+        return self._weight
 
     def left(self) -> float:
-        return self.__centre[0] - self.__radius
+        return self._centre[0] - self._radius
 
     def right(self) -> float:
-        return self.__centre[0] + self.__radius
+        return self._centre[0] + self._radius
 
     def top(self) -> float:
-        return self.__centre[1] + self.__radius
+        return self._centre[1] + self._radius
 
     def bottom(self) -> float:
-        return self.__centre[1] - self.__radius
+        return self._centre[1] - self._radius
 
 
 class BasicGroup:

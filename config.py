@@ -22,7 +22,7 @@ SLIDE_ANIMATION = False
 
 # --- TEST INSTANCES --- #
 # The test instance to run [1-7], anything outside the range will use the default values
-EXECUTE_TEST_CASE = 7
+EXECUTE_TEST_CASE = 1
 
 # Whether to record significant generational changes within a population.
 RECORD_RESULTS = True

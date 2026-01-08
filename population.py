@@ -4,8 +4,8 @@ from event_manager import EventManager
 from utils import get_random_indices
 from config import SLIDE_ANIMATION, CYLINDER_TYPES
 from numpy import array, ndarray
-from config import EXECUTE_TEST_CASE
 from crossovers import *
+from re import sub
 
 from typing import List, Tuple, Union, Dict
 from matplotlib.pyplot import Figure, Axes
@@ -101,7 +101,7 @@ class Population:
         # Check whether a list of cylinders has been passed through
         if not cylinders:
             # Get a random selection of different cylinder types and save them as objects
-            self.__cylinders = [Cylinder(cylinder_sides, diameter / 2, weight) for weight, diameter in random.choices(CYLINDER_TYPES, k=num_cylinders)]
+            self.__cylinders = [Cylinder(cylinder_sides, diameter, weight) for weight, diameter in random.choices(CYLINDER_TYPES, k=num_cylinders)]
 
         # Sorts the cylinders in descending order based on size (weight)
         self.__cylinders = sorted(self.__cylinders, reverse=True, key=lambda x: x.weight)
@@ -114,6 +114,10 @@ class Population:
         self.__container_height = -1.
 
         self.__event_manager: EventManager | None = None
+
+        # Keeps a track of the selection and crossover that was called within evolve() : mainly for get_summary()
+        self.__selection_method = ""
+        self.__crossover_method = ""
 
     @property
     def bins(self) -> Bins:
@@ -172,7 +176,7 @@ class Population:
         focussed_bin = self.__bins.bins[bin_focus]
 
         self.__best_cylinder_group = BasicGroup(
-            [Cylinder(self.__cylinder_sides, cylinder.radius, cylinder.weight) for cylinder in focussed_bin.cylinders],
+            [cylinder.__class__(sides=self.__cylinder_sides, diameter=cylinder.diameter, weight=cylinder.weight, id_=cylinder.id) for cylinder in focussed_bin.cylinders],
             focussed_bin.size(), self.__cylinder_sides, self.__container_width, self.__container_height
         )
 
@@ -195,7 +199,7 @@ class Population:
         # of each class, thus essentially sharing the same cylinder's amongst each group, instead of having their own.
         self.__population = [
             CylinderGroup(
-                [Cylinder(self.__cylinder_sides, cylinder.radius, cylinder.weight) for cylinder in focussed_bin.cylinders],
+                [cylinder.__class__(sides=self.__cylinder_sides, diameter=cylinder.diameter, weight=cylinder.weight, id_=cylinder.id) for cylinder in focussed_bin.cylinders],
                 focussed_bin.size(), self.__cylinder_sides, self.__container_width, self.__container_height
             ) for _ in range(self.__size)
         ]
@@ -210,6 +214,8 @@ class Population:
         :param int k: The size of the selection.
         :return: CylinderGroup
         """
+        self.__selection_method = "tournament"
+
         # Randomly select k cylinder groups and return the one with the highest fitness
         return max(random.sample(self.__population, k), key=lambda x: x.fitness())
 
@@ -226,6 +232,8 @@ class Population:
         Perform roulette wheel selection to select a cylinder group.
         :return: CylinderGroup
         """
+        self.__selection_method = "roulette wheel"
+
         return self.__population[
             get_random_indices(self.get_normalised_fitness())[0]
         ]
@@ -235,6 +243,8 @@ class Population:
         Similar to Roulette Wheel Selection, but instead of one fixed point there's two.
         :return: Tuple[CylinderGroup, CylinderGroup]
         """
+        self.__selection_method = "stochastic universal sampling"
+
         child1_ind, child2_ind = get_random_indices(self.get_normalised_fitness(), 2)
         return (
             self.__population[child1_ind],
@@ -246,6 +256,8 @@ class Population:
         Performs ranked based selection to select a cylinder group.
         :return: CylinderGroup
         """
+        self.__selection_method = "rank based"
+
         # - Sort the population in terms of fitness from smallest to largest - #
         sorted_population = sorted(self.__population, key=lambda group: group.fitness())
 
@@ -259,7 +271,60 @@ class Population:
         Gets one of the best k groups from the population.
         :return: CylinderGroup
         """
+        self.__selection_method = "elitist"
+
         return random.choice(sorted(self.__population, key=lambda group: group.fitness())[-k:])
+
+    def single_point_crossover(self, group1: List[int], group2: List[int]) -> List[int]:
+        """
+        Extends the single_point_crossover function, by explicitly recording this method being used.
+        :param List[int] group1: The group of position numbers (a position string)
+        :param List[int] group2: The group of position numbers (a position string)
+        :return: List[int]
+        """
+        self.__crossover_method = "single point crossover"
+
+        return single_point_crossover(group1, group2)
+
+    def multi_point_crossover(self, group1: List[int], group2: List[int], *, crossovers: int) -> List[int]:
+        """
+        Extends the multi_point_crossover function, by explicitly recording this method being used.
+        :param List[int] group1: The group of position numbers (a position string)
+        :param List[int] group2: The group of position numbers (a position string)
+        :param int crossovers: Specifies the number of crossovers that will be used between the groups.
+        :return: List[int]
+        """
+        self.__crossover_method = "multi point crossover"
+
+        return multi_point_crossover(group1, group2, crossovers=crossovers)
+
+    def uniform_crossover(self, group1: List[int], group2: List[int], *, bias: float = 0) -> List[int]:
+        """
+        Extends the uniform_point_crossover function, by explicitly recording this method being used.
+        :param List[int] group1: The group of position numbers (a position string)
+        :param List[int] group2: The group of position numbers (a position string)
+
+        :param float bias: A factor that determines how much values from one group is within the resultant child.
+        0 is a random balance. The range of values is [-0.5, 0.5], wherein the bias
+        is toward group1 and group2 respectively. So the closer to -0.5, greater than chance for group1's values to remain,
+        whereas closer to 0.5, the more of a chance the values from group2 are kept.
+
+        :return: List[int]
+        """
+        self.__crossover_method = "uniform crossover"
+
+        return uniform_crossover(group1, group2, bias=bias)
+
+    def davis_order_crossover(self, group1: List[int], group2: List[int]) -> List[int]:
+        """
+        Extends the davis_order_crossover function, by explicitly recording this method being used.
+        :param List[int] group1: The group of position numbers (a position string)
+        :param List[int] group2: The group of position numbers (a position string)
+        :return: List[int]
+        """
+        self.__crossover_method = "davis order crossover"
+
+        return davis_order_crossover(group1, group2)
 
     def mutate(self, group: List[int]) -> List[int]:
         """
@@ -299,7 +364,6 @@ class Population:
                   f"New fitness: \033[1m{best_gen_fitness}\033[0m\t\033[32m+{best_gen_fitness - best_fitness}\033[0m (from {best_fitness})\n"
                   f"{'='*80}\n")
 
-            # ---- PROBLEM IS HERRE ---- #
             # Update the centre values of the Cylinders within the best cylinder group.
             for i, decoded_cylinder in enumerate(best_cylinder_group_gen.decoded_cylinders):
                 self.__best_cylinder_group.cylinders[i].centre = decoded_cylinder.centre
@@ -310,7 +374,7 @@ class Population:
         # Use the recycling method within existing cylinder groups to avoid creating many objects that will be unused.
         next_groups = [
             self.mutate(
-                single_point_crossover(
+                self.single_point_crossover(
                     self.tournament_selection().group,
                     self.tournament_selection().group
                 )
@@ -342,20 +406,26 @@ class Population:
 
     def get_summary(self, time_taken: float, bin_focus: int = 0) -> Dict:
         """
-        Using the save states and ..., generate a dictionary that contains a summary of the key events within this
-        populations evolution.
+        Generate a dictionary that contains a summary of the key events within this populations evolution.
         :param float time_taken: The time taken to reach the maximum number of generations.
         :param int bin_focus: The bin of cylinders that's in focus.
-        :return: Dict.
+        :return: Dict
         """
+        return {
+            "Compute Time": time_taken,
+            "Population Size": self.__size,
+            "Binned Cylinders": sub(r"\033\[[0-9]*m", '', '\n'.join(['\t'.join(str(cylinder).split('\t')[:1] + str(cylinder).split('\t')[2:]) for cylinder in self.__bins.bins[bin_focus].cylinders])),
 
-        # SOME THINGS TO RECORD:
-        #   - Test instance number
-        #   - Time for computation
-        #   - Selection method used
-        #   - Crossover method used
-        #   - History of evolving fitnesses
-        #   - Best overall fitness
-        #   - Details of each cylinder.
-        #   - The bin being focussed on.
+            "Best Cylinder Group": {
+                "Fitness": self.__best_cylinder_group.fitness(),
+                "Cylinder Positions": sub(r"\033\[[0-9]*m", '', '\n'.join(['\t'.join(str(cylinder).split('\t')[:2]) for cylinder in self.__best_cylinder_group.cylinders])),
+            },
+
+            "Key Generations": list(zip(*self.__containers[bin_focus].saved_generations))[0],
+            "Fitness History": list(zip(*self.__containers[bin_focus].saved_generations))[1],
+
+            "Selection Method Used": self.__selection_method,
+            "Crossover Technique Used": self.__crossover_method,
+            "Mutation Rate": self.__mutation_rate
+        }
 

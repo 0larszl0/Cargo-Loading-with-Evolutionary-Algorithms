@@ -10,18 +10,15 @@ from config import CYLINDER_SIDES
 
 class TestCylinder(Cylinder):
     """Represents a cylindrical container"""
-    def __init__(self, id_: int, diameter: float, weight: float):
-        super().__init__(CYLINDER_SIDES, diameter / 2, weight)
-        self.__id = id_
-        self.__diameter = diameter
 
-    def to_dict(self):
-        return {
-            "id": self.__id,
-            "diameter": self.__diameter,
-            "weight": self.weight
-        }
+    def __init__(self, id_: int, diameter: float, weight: float, sides: int = CYLINDER_SIDES):
+        super().__init__(sides, diameter, weight, id_=id_)
 
+    def __str__(self):
+        return (f"Cylinder (\033[4mID\033[0m: \033[1m{self._id}\033[0m):"
+                f"\t- Centre: ({self._centre[0]:.3f}, {self._centre[1]:.3f})"
+                f"\t- Radius: {self._radius}"
+                f"\t- Weight: {self._weight}")
 
 
 def test_instances(instance_key: int = 1) -> Tuple[Tuple[float, ...], Tuple[TestCylinder, ...]]:
