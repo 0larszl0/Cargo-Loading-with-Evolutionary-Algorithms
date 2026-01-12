@@ -175,6 +175,7 @@ class Population:
         """
         focussed_bin = self.__bins.bins[bin_focus]
 
+        # cylinder.__class__ is used as it can either be a Cylinder or TestCylinder object, it's dependent on whether a test instance is being executed or not.
         self.__best_cylinder_group = BasicGroup(
             [cylinder.__class__(sides=self.__cylinder_sides, diameter=cylinder.diameter, weight=cylinder.weight, id_=cylinder.id) for cylinder in focussed_bin.cylinders],
             focussed_bin.size(), self.__cylinder_sides, self.__container_width, self.__container_height

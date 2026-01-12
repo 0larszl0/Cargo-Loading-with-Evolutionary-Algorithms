@@ -20,6 +20,11 @@ container (to prevent tipping during transport).
 My written reports for this problem will be released soon....
 
 ---
+
+### Running the Program
+To see the results of the program please
+
+
 ### Features
 1. Instead of discarding cylinders, each cylinder will be sorted into bins. Each bin will be optimised to meet this problems objectives.
 2. Animations. Cylinders will move to the next optimal position, before pausing to show the optimal solution found up to 'x' generation, before continuing to move to the next optimal positions. Visualisations will only be static if there's only one cylinder to solve for, or only one optimal solution was found within 'n' generations.

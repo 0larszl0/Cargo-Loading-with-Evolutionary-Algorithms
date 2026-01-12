@@ -9,8 +9,8 @@ from cylinders import Cylinder, BasicGroup
 from custom_patches.circle import CustomCircle
 from typing import List, Dict, Tuple, Iterable, Union
 from utils import com
-from time import sleep
 from event_manager import EventManager
+from config import REPEAT_ANIMATION
 
 
 class Container:
@@ -145,11 +145,13 @@ class AnimatedContainer(Container):
         self.__fpp = fpp
 
         self.__max_frames = -1
-        self.__frame = -2
         self.__save_index = 0
 
         self.__save_states = {}  # {Cylinder patch: [[List of different centres deemed best at particular generations], [A list of increments between 'i' and 'i+1' centres]]}
         self.__saved_generations = []
+
+        self.__paused_frame = 1  # Always pause the first frame so that the Generation-0 of placements can be viewed.
+        self.__pause_length = 20
 
     @property
     def save_states(self) -> Dict[Cylinder, List[List[Tuple[float, float]]]]:
@@ -220,24 +222,37 @@ class AnimatedContainer(Container):
                     f"Fitness: {self.__saved_generations[self.__save_index][1]}"
                 )
 
-    def update(self, _) -> Iterable[Artist]:
+    def update(self, frame: int) -> Iterable[Artist]:
         """
         Updates the artist's positions based on the difference between the current position and the next whilst
         incorporating the amount of fps the animation will have.
+        :param int frame: The frame that the animation is currently on.
         :return: Iterable[Artist]
         """
-        # Deliberately stall the animation, so that the axes is given enough time to draw everything.
-        if self.__frame < 0:
-            self.__frame += 1
+        print(f"Frame: {frame}, index: {self.__save_index}, paused frame: {self.__paused_frame}")
+
+        # - Start Condition - #
+        if frame == 0:
+            self.__save_index = 0
+            self.__paused_frame = 1
+
+            # reset cylinder positions...
+
             return self._cylinder_patches
 
-        # Checks whether the next optimal solution is reached, for it then pauses to signify so, and then continue transition again.
-        elif self.__frame % self.__fpp == 0:
-            sleep(2.5)
-            self.choose_title(self.TRANSITION_TITLE)
+
+        # - Pause Logic - #
+        # Check whether the current frame has reached the frame denoting the end of the pause.
+        if frame == self.__paused_frame + self.__pause_length:
+            self.__paused_frame = 0  # signify end of pause by setting variable to 0
+
+        # If the current frame hadn't reached the end
+        if self.__paused_frame:
+            return self._cylinder_patches  # return the visible artists.
+
 
         # - Change patch positions - #
-        for i, cylinder in enumerate(self._best_cylinder_group.cylinders):
+        for i in range(self._best_cylinder_group.num_cylinders):
             cylinder_patch = self._cylinder_patches[i]
 
             x_incr, y_incr = self.__save_states[cylinder_patch][1][self.__save_index]
@@ -245,12 +260,19 @@ class AnimatedContainer(Container):
 
         self.update_com_marker()
 
+
+        # - Determine whether animation should be paused to view patch positions - #
+        if self.__fpp == 1:
+            self.__paused_frame = frame
+
+
         # When arriving at the last frame, change the index and the title manually.
-        if self.__frame % self.__fpp == self.__fpp - 1:
+        if frame % self.__fpp == self.__fpp - 1:
             self.__save_index += 1
             self.choose_title(self.BEST_TITLE)
 
-        self.__frame += 1
+        elif frame % self.__fpp == 0:
+            self.choose_title(self.TRANSITION_TITLE)
 
         return self._cylinder_patches
 
@@ -259,13 +281,26 @@ class AnimatedContainer(Container):
         An override of the child method.
         :return: FuncAnimation, so the animation won't be deleted on the end of this function call.
         """
-        # calculates the total number of frames for this animation.
-        # +x, where x is the amount that self.__frames is below -1
-        self.__max_frames = ((len(self.__saved_generations) - 1) * self.__fpp) + (abs(self.__frame) - 1)
+        num_animations = len(self.__saved_generations) - 1  # represents the number of animations that the saved generations can have.
+
+        # Calculates the total number of frames for this animation, in the form: x + y + z, where:
+        #   -> x is the number of key generations (except the final one) multiplied by the number of frames per patch
+
+        self.__max_frames = (num_animations * self.__fpp) + (self.__pause_length * num_animations)
+
+        print(self.__saved_generations)
+        print(self.__save_states)
+        print(self.__max_frames)
 
         if self.__max_frames:
-            return animation.FuncAnimation(fig=self._fig, func=self.update, frames=self.__max_frames, interval=0, repeat=False)
+            return animation.FuncAnimation(fig=self._fig, func=self.update, frames=self.__max_frames, interval=0, repeat=REPEAT_ANIMATION)
 
         self.choose_title(self.BEST_TITLE)
         return None
 
+
+# My todos:
+# - Fix the penultimate frame from being missed.  -- DONE
+# - Enable the user to REPEAT THE ANIMATION
+# - Ensure SLIDING ANIMATION works with new implementation
+# - Create a manual flick option to manually move between results.

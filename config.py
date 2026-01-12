@@ -15,14 +15,20 @@ CYLINDER_SIDES = 8
 
 # --- VISUALISATIONS --- #
 # Whether to visually see the evolution of the population take place.
-VISUALISE_EVOLUTION = False
+VISUALISE_EVOLUTION = True
 
 # Whether a packing animation should gradually move to the next position (True) or snap to it (False).
 SLIDE_ANIMATION = False
 
+# Determines whether the animations loop or not.
+REPEAT_ANIMATION = False
+
+# Determines whether you (the user) would like to use the arrow keys to go through each key generation or not.
+MANUAL_FLICK = False
+
 # --- TEST INSTANCES --- #
 # The test instance to run [1-7], anything outside the range will use the default values
-EXECUTE_TEST_CASE = 1
+EXECUTE_TEST_CASE = 7
 
 # Whether to record significant generational changes within a population.
-RECORD_RESULTS = True
+RECORD_RESULTS = False

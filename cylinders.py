@@ -82,6 +82,10 @@ class BasicGroup:
         return self._cylinders
 
     @property
+    def num_cylinders(self) -> int:
+        return self._num_cylinders
+
+    @property
     def weight(self) -> int:
         return self._weight
 
