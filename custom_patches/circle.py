@@ -11,6 +11,7 @@ class CustomCircle(Circle):
                  text_colour: str = "#F7F8F9", arrow_colour: str = "#AFD8DB", **kwargs):
         super().__init__(xy, radius, **kwargs)
 
+        self.__init_xy = xy
         self.__weight = weight
 
         arrow_style = ArrowStyle.CurveAB(head_length=radius * 4, head_width=radius * 1.6)
@@ -74,6 +75,10 @@ class CustomCircle(Circle):
         :return: None
         """
         self.__set_annotations(xy)
+
+        if self.center == (0., 0.):  # sets a new initial position: used for looping an animation properly
+            self.__init_xy = xy
+
         self.center = xy
 
     def add_to(self, ax: Axes) -> None:
@@ -98,4 +103,11 @@ class CustomCircle(Circle):
         """
         for annotation in self.__annotations:
             annotation.set_visible(not annotation.get_visible())
+
+    def reset_position(self) -> None:
+        """
+        Resets the position of this patch and all its annotations.
+        :return: None
+        """
+        self.set_position(self.__init_xy)
 

@@ -21,7 +21,7 @@ VISUALISE_EVOLUTION = True
 SLIDE_ANIMATION = False
 
 # Determines whether the animations loop or not.
-REPEAT_ANIMATION = False
+REPEAT_ANIMATION = True
 
 # Determines whether you (the user) would like to use the arrow keys to go through each key generation or not.
 MANUAL_FLICK = False
