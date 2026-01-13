@@ -1,0 +1,24 @@
+{
+  "Bin 0": {
+    "Compute Time": 0.5872548049992474,
+    "Population Size": 50,
+    "Binned Cylinders": "Cylinder (ID: 1):\t- Radius: 1.75\t- Weight: 25.0\nCylinder (ID: 2):\t- Radius: 1.5\t- Weight: 20.0\nCylinder (ID: 3):\t- Radius: 1.25\t- Weight: 18.0\nCylinder (ID: 4):\t- Radius: 1.25\t- Weight: 18.0\nCylinder (ID: 5):\t- Radius: 1.0\t- Weight: 15.0",
+    "Best Cylinder Group": {
+      "Fitness": 18.03805884371838,
+      "Cylinder Positions": "Cylinder (ID: 1):\t- Centre: (7.500, 6.000)\nCylinder (ID: 2):\t- Centre: (9.798, 3.702)\nCylinder (ID: 3):\t- Centre: (5.379, 8.121)\nCylinder (ID: 4):\t- Centre: (2.879, 8.121)\nCylinder (ID: 5):\t- Centre: (12.298, 3.702)"
+    },
+    "Key Generations": [
+      0,
+      9,
+      37
+    ],
+    "Fitness History": [
+      5.700944784408013,
+      10.692195206956566,
+      18.03805884371838
+    ],
+    "Selection Method Used": "tournament",
+    "Crossover Technique Used": "single point crossover",
+    "Mutation Rate": 0.1
+  }
+}
