@@ -136,9 +136,12 @@ class Container:
 class AnimatedContainer(Container):
     TRANSITION_TITLE = 1
     BEST_TITLE = 2
+    TRANSITION_TITLE_R = 3  # Reversed Transition Title
 
     def __init__(self, fpp: int, fig: plt.Figure, ax: plt.Axes, event_manager: EventManager, width: float, height: float):
         super().__init__(fig, ax, event_manager, width, height)
+
+        self._event_manager.add_anim_containers(self)
 
         # frames per patch, how many positions to move in between each optimal centre.
         # Say you're going from (8, y) -> (9, y), with fpp = 60, you have to move in increments of (9-8) / 60
@@ -161,6 +164,14 @@ class AnimatedContainer(Container):
     @property
     def saved_generations(self) -> List[Tuple[int, float]]:
         return self.__saved_generations
+
+    @property
+    def save_index(self) -> int:
+        return self.__save_index
+
+    @save_index.setter
+    def save_index(self, new_index: int) -> None:
+        self.__save_index = new_index
 
     def save_state(self, generation: int) -> None:
         """
@@ -194,16 +205,6 @@ class AnimatedContainer(Container):
         # Record the generation, with its COM, that improved the pre-existing solution.
         self.__saved_generations.append((generation, self._best_cylinder_group.fitness()))
 
-    def update_com_marker(self) -> None:
-        """
-        Updates the x and y positions of the com marker, based on cylinder patch positions and weights.
-        :return: None
-        """
-        x_com, y_com = com(self._cylinder_patches, self._best_cylinder_group.weight)
-
-        self._com_marker.set_xdata([x_com])
-        self._com_marker.set_ydata([y_com])
-
     def choose_title(self, title_option: int) -> None:
         """
         Use the Enums within this class to select an option.
@@ -223,6 +224,39 @@ class AnimatedContainer(Container):
                     f"Fitness: {self.__saved_generations[self.__save_index][1]}"
                 )
 
+            case 3:
+                self.update_title(
+                    f"Moving from Generation ({self.__saved_generations[self.__save_index + 1][0]}) to Generation ({self.__saved_generations[self.__save_index][0]})\n"
+                    f"From fitness: {self.__saved_generations[self.__save_index + 1][1]} to {self.__saved_generations[self.__save_index][1]}"
+                )
+
+    def update_com_marker(self) -> None:
+        """
+        Updates the x and y positions of the com marker, based on cylinder patch positions and weights.
+        :return: None
+        """
+        x_com, y_com = com(self._cylinder_patches, self._best_cylinder_group.weight)
+
+        self._com_marker.set_xdata([x_com])
+        self._com_marker.set_ydata([y_com])
+
+    def update_patch_positions(self, direction: int = 1) -> None:
+        """
+        Iterates through the number of cylinders in the best cylinder group, and increments the position of each patch
+        based on the information obtained from the save states.
+        :param int direction: Whether the patch positions are progressive (1), i.e. from generation 0 -> 1 -> 2, or
+        regressive (-1) generation 2 -> 1 -> 0.
+        :return: None
+        """
+        for i in range(self._best_cylinder_group.num_cylinders):
+            cylinder_patch = self._cylinder_patches[i]
+
+            x_incr, y_incr = self.__save_states[cylinder_patch][1][self.__save_index]
+            x_incr *= direction
+            y_incr *= direction
+
+            cylinder_patch.set_position((cylinder_patch.centre[0] + x_incr, cylinder_patch.centre[1] + y_incr))
+
     def update(self, frame: int) -> Iterable[Artist]:
         """
         Updates the artist's positions based on the difference between the current position and the next whilst
@@ -230,7 +264,7 @@ class AnimatedContainer(Container):
         :param int frame: The frame that the animation is currently on.
         :return: Iterable[Artist]
         """
-        print(f"Frame: {frame}, Saved-Index: {self.__save_index}, Paused-frame: {self.__paused_frame}, Animated-frame: {self.__animation_frame}")
+        # print(f"Frame: {frame}, Saved-Index: {self.__save_index}, Paused-frame: {self.__paused_frame}, Animated-frame: {self.__animation_frame}")
 
         # - Start Condition - #
         # This condition nullifies frame 0, as a result, the index of which the animation frame will start on is 1.
@@ -266,12 +300,7 @@ class AnimatedContainer(Container):
             return self._cylinder_patches  # return the visible artists.
 
         # - Change patch positions - #
-        for i in range(self._best_cylinder_group.num_cylinders):
-            cylinder_patch = self._cylinder_patches[i]
-
-            x_incr, y_incr = self.__save_states[cylinder_patch][1][self.__save_index]
-            cylinder_patch.set_position((cylinder_patch.centre[0] + x_incr, cylinder_patch.centre[1] + y_incr))
-
+        self.update_patch_positions()
         self.update_com_marker()
 
         # - Determine whether animation should be paused to view patch positions - #
@@ -283,7 +312,7 @@ class AnimatedContainer(Container):
 
         return self._cylinder_patches
 
-    def ready_animation(self) -> Union[FuncAnimation, None]:
+    def ready_animation(self) -> FuncAnimation:
         """
         An override of the child method.
         :return: FuncAnimation, so the animation won't be deleted on the end of this function call.
@@ -299,19 +328,5 @@ class AnimatedContainer(Container):
         # print(self.__save_states)
         # print(self.__max_frames)
 
-        if self.__max_frames:
-            return animation.FuncAnimation(fig=self._fig, func=self.update, frames=self.__max_frames, interval=0, repeat=REPEAT_ANIMATION)
+        return animation.FuncAnimation(fig=self._fig, func=self.update, frames=self.__max_frames, interval=0, repeat=REPEAT_ANIMATION)
 
-        return None
-
-
-# My todos:
-# - Fix the penultimate frame from being missed.  -- DONE
-# - Enable the user to REPEAT THE ANIMATION
-#       + Add a pause for the final generation.  -- DONE
-#       + Change title for initial generation  -- DONE
-
-# - Ensure SLIDING ANIMATION works with new implementation
-
-# --- UNDERSTAND WHY THERE'S A MISMATCH IN FRAMES
-# - Create a manual flick option to manually move between results.

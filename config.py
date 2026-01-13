@@ -18,13 +18,18 @@ CYLINDER_SIDES = 8
 VISUALISE_EVOLUTION = True
 
 # Whether a packing animation should gradually move to the next position (True) or snap to it (False).
+# THIS DOES NOT AFFECT HOW THE GENETIC ALGORITHM POSITIONS A CYLINDER, IT IS ONLY FOR AN AESTHETIC APPEAL.
 SLIDE_ANIMATION = False
 
 # Determines whether the animations loop or not.
-REPEAT_ANIMATION = True
+REPEAT_ANIMATION = False
 
 # Determines whether you (the user) would like to use the arrow keys to go through each key generation or not.
 MANUAL_FLICK = False
+
+# The number of frames each patch makes when sliding between positions
+# IS ONLY APPLICABLE WHEN SLIDE_ANIMATION = True
+FRAMES_PER_PATCH = 30
 
 # --- TEST INSTANCES --- #
 # The test instance to run [1-7], anything outside the range will use the default values

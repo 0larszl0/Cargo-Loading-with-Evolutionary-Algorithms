@@ -2,7 +2,7 @@ from cylinders import Cylinder, BasicGroup, CylinderGroup
 from canvas import AnimatedContainer, Container, FuncAnimation
 from event_manager import EventManager
 from utils import get_random_indices
-from config import SLIDE_ANIMATION, CYLINDER_TYPES
+from config import SLIDE_ANIMATION, CYLINDER_TYPES, FRAMES_PER_PATCH, MANUAL_FLICK
 from numpy import array, ndarray
 from crossovers import *
 from re import sub
@@ -113,8 +113,6 @@ class Population:
         self.__container_width = -1.
         self.__container_height = -1.
 
-        self.__event_manager: EventManager | None = None
-
         # Keeps a track of the selection and crossover that was called within evolve() : mainly for get_summary()
         self.__selection_method = ""
         self.__crossover_method = ""
@@ -132,14 +130,14 @@ class Population:
             self.__bins.pack_cylinder_ff(cylinder)
 
         if not self.__bins.bins[0].cylinders:  # if no cylinders could be packed.
-            raise Exception(f"\r\033[1m\033[31mCustom Exception: No cylinder can be packed with a maximum weight limit of: {self.__max_weight}")
+            raise Exception(f"\r\033[1m\033[31mCustom Exception: No cylinder can be packed with a maximum weight limit of: {self.__max_weight}\033[0m")
 
         print(f"\nCylinders have been packed into the following bins:")
         for i, binn in enumerate(self.__bins.bins):
             print(f"\t\033[4mBin {i}\033[0m\n\t\t- {'\n\t\t- '.join([cylinder for cylinder in str(binn).split('\n')])}")
 
     def create_containers(self, fig: Figure, ax: Union[Axes, ndarray[Axes]], event_manager: EventManager,
-                          container_width: float, container_height: float, fpp: int = 30) -> None:
+                          container_width: float, container_height: float, fpp: int = FRAMES_PER_PATCH) -> None:
         """
         Create a container visualisation object for each possible bin.
         :param Figure fig: The figure the visualisation should be made onto.
@@ -155,6 +153,8 @@ class Population:
 
         if not SLIDE_ANIMATION:
             fpp = 1
+
+        event_manager.set_fpp(fpp)
 
         if self.__bins.total == 1:
             self.__containers.append(AnimatedContainer(fpp, fig, ax, event_manager, container_width, container_height))
@@ -388,7 +388,7 @@ class Population:
 
         self.__generations += 1
 
-    def create_evolution_anim(self, bin_focus: int = 0) -> Union[FuncAnimation, None]:
+    def visualise_evolution(self, bin_focus: int = 0) -> Union[FuncAnimation, None]:
         """
         Uses the dynamic visualiser to illustrate the placement of cylinders between key generations.
         :return: Union[FuncAnimation, None], the animation for this bin's evolution, if there's more than one save point, otherwise None (and is treated statically)
@@ -402,6 +402,9 @@ class Population:
             print(f"{cylinder_patch}:\n"
                   f"\t- Centre history:\t{', '.join([str(centre) for centre in save[0]])}\n"
                   f"\t- Increments:\t\t{', '.join([str(centre) for centre in save[1]])}\n")
+
+        if MANUAL_FLICK:
+            return None
 
         return current_container.ready_animation()  # Ready the animation for that container/axes.
 

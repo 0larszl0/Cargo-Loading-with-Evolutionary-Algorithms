@@ -10,6 +10,7 @@ from TEST import test_instances
 from time import perf_counter
 from json import dump
 
+from config import MANUAL_FLICK
 
 def create_subplots(population: Population) -> Tuple[plt.Figure, plt.Axes, EventManager]:
     """
@@ -88,7 +89,7 @@ def run_ga(cylinders: List[Cylinder],
         for generation in range(max_generations):
             population.evolve(i)
 
-        if visualise: animations.append(population.create_evolution_anim(i))
+        if visualise: animations.append(population.visualise_evolution(i))
         key_events[f"Bin {i}"] = population.get_summary(perf_counter() - start_time, i)
 
     if visualise: plt.show()

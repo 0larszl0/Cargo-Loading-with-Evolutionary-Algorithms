@@ -1,3 +1,5 @@
+<!-- Two gifs, one of SLIDING_ANIMATION=True, and when it =False -->
+
 # Cargo Loading with Evolutionary Algorithms
 This assessment concerns a cargo container loading problem: We are given a rectangular cargo
 container and a set of cylindrical containers (barrels, drums, tanks) of different sizes and weights. Each
@@ -21,11 +23,25 @@ My written reports for this problem will be released soon....
 
 ---
 
-### Running the Program
-To see the results of the program please
+### Setup
+To experiment with the program and its results, please consider the following sections.
 
+#### Basic
+
+
+#### Advanced
+
+
+### Interactivity
+The following table describes the different key-press events each figure contains.
+
+| Key         | Description                                                                                                                                      |
+|-------------|--------------------------------------------------------------------------------------------------------------------------------------------------|
+| a           | Toggles the annotations of each cylinder                                                                                                         |
+| l           | Toggles the legend for each plot                                                                                                                 |
+| Right Arrow | Used when MANUAL_FLICK = True, it moves to the next generation of results, in a way that is determined from the SLIDING_ANIMATION configuration. |
+| Left Arrow  | Used when MANUAL_FLICK = True, it moves to the last generation of results, in a way that is determined by the SLIDING_ANIMATION configuration.   |
 
 ### Features
 1. Instead of discarding cylinders, each cylinder will be sorted into bins. Each bin will be optimised to meet this problems objectives.
 2. Animations. Cylinders will move to the next optimal position, before pausing to show the optimal solution found up to 'x' generation, before continuing to move to the next optimal positions. Visualisations will only be static if there's only one cylinder to solve for, or only one optimal solution was found within 'n' generations.
-3. Events: Press 'a' to toggle annotations of every circle, and 'l' to toggle the legend of each plot.
