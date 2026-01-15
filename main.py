@@ -1,4 +1,4 @@
-from config import CYLINDER_SIDES, EXECUTE_TEST_CASE, CONTAINER_HEIGHT, CONTAINER_WIDTH, VISUALISE_EVOLUTION, RECORD_RESULTS
+from config import CYLINDER_SIDES, EXECUTE_TEST_CASE, CONTAINER_HEIGHT, CONTAINER_WIDTH, VISUALISE_EVOLUTION, RECORD_RESULTS, SAVE_ANIMATION, SLIDE_ANIMATION, SAVE_FORMAT
 from event_manager import EventManager
 from population import Population
 from cylinders import Cylinder
@@ -10,7 +10,6 @@ from TEST import test_instances
 from time import perf_counter
 from json import dump
 
-from config import MANUAL_FLICK
 
 def create_subplots(population: Population) -> Tuple[plt.Figure, plt.Axes, EventManager]:
     """
@@ -94,15 +93,21 @@ def run_ga(cylinders: List[Cylinder],
 
     if visualise: plt.show()
 
-    if RECORD_RESULTS:
+    smu, ctu, mut_rate = '', '', 0.
+    if RECORD_RESULTS or SAVE_ANIMATION:
         smu, ctu, mut_rate = (
             key_events["Bin 0"]["Selection Method Used"],
             ''.join(map(lambda x: x[0], key_events["Bin 0"]["Crossover Technique Used"].split(' '))),
             key_events["Bin 0"]["Mutation Rate"]
         )
 
+    if RECORD_RESULTS:
         with open(f"_TEST_RESULTS/TEST_Instance[{EXECUTE_TEST_CASE}]-SMU[{smu}]-CTU[{ctu}]-MR[{mut_rate}].json", 'w') as json_file:
             dump(key_events, json_file)
+
+    if SAVE_ANIMATION:
+        for bin_focus, animation in enumerate(animations):
+            animation.save(f"_ANIMATIONS/TEST_Instance[{EXECUTE_TEST_CASE}]-Bin[{bin_focus}]-SMU[{smu}]-CTU[{ctu}]-MR[{mut_rate}]-SLIDING[{SLIDE_ANIMATION}].{SAVE_FORMAT}", fps=60)
 
 
 if __name__ == "__main__":

@@ -1,9 +1,11 @@
 {
   "Bin 0": {
-    "Compute Time": 1.3161358490015118,
+    "Compute Time": 1.3179075830003057,
     "Population Size": 50,
     "Binned Cylinders": "Cylinder (ID: 1):\t- Radius: 2.5\t- Weight: 50.0\nCylinder (ID: 2):\t- Radius: 2.25\t- Weight: 45.0\nCylinder (ID: 3):\t- Radius: 2.0\t- Weight: 40.0\nCylinder (ID: 4):\t- Radius: 1.75\t- Weight: 35.0\nCylinder (ID: 5):\t- Radius: 1.75\t- Weight: 35.0\nCylinder (ID: 6):\t- Radius: 1.5\t- Weight: 30.0\nCylinder (ID: 7):\t- Radius: 1.5\t- Weight: 30.0\nCylinder (ID: 8):\t- Radius: 1.25\t- Weight: 25.0\nCylinder (ID: 9):\t- Radius: 1.25\t- Weight: 25.0\nCylinder (ID: 10):\t- Radius: 1.0\t- Weight: 20.0",
+    "Max Weight": 500.0,
     "Best Cylinder Group": {
+      "Weight": 335.0,
       "Fitness": 45.760251292229796,
       "Cylinder Positions": "Cylinder (ID: 1):\t- Centre: (10.000, 10.000)\nCylinder (ID: 2):\t- Centre: (5.250, 10.000)\nCylinder (ID: 3):\t- Centre: (14.500, 10.000)\nCylinder (ID: 4):\t- Centre: (2.422, 7.172)\nCylinder (ID: 5):\t- Centre: (14.500, 13.750)\nCylinder (ID: 6):\t- Centre: (10.000, 14.000)\nCylinder (ID: 7):\t- Centre: (14.500, 6.500)\nCylinder (ID: 8):\t- Centre: (10.000, 6.250)\nCylinder (ID: 9):\t- Centre: (5.250, 13.500)\nCylinder (ID: 10):\t- Centre: (16.621, 7.879)"
     },

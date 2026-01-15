@@ -1,9 +1,11 @@
 {
   "Bin 0": {
-    "Compute Time": 0.4327310450007644,
+    "Compute Time": 0.411755125000127,
     "Population Size": 50,
     "Binned Cylinders": "Cylinder (ID: 1):\t- Radius: 1.5\t- Weight: 20.0\nCylinder (ID: 2):\t- Radius: 1.5\t- Weight: 20.0\nCylinder (ID: 3):\t- Radius: 1.0\t- Weight: 15.0\nCylinder (ID: 4):\t- Radius: 1.0\t- Weight: 15.0",
+    "Max Weight": 150.0,
     "Best Cylinder Group": {
+      "Weight": 70.0,
       "Fitness": 10.047378541243665,
       "Cylinder Positions": "Cylinder (ID: 1):\t- Centre: (6.000, 5.000)\nCylinder (ID: 2):\t- Centre: (6.000, 8.000)\nCylinder (ID: 3):\t- Centre: (4.232, 3.232)\nCylinder (ID: 4):\t- Centre: (7.768, 3.232)"
     },

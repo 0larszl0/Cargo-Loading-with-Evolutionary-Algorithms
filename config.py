@@ -24,6 +24,11 @@ SLIDE_ANIMATION = False
 # Determines whether the animations loop or not.
 REPEAT_ANIMATION = False
 
+# Determines whether you (the user) want to save the produced animation
+# MUST SET VISUALISE_EVOLUTION = TRUE FOR PROPER SAVING
+SAVE_ANIMATION = False
+SAVE_FORMAT = "gif"
+
 # Determines whether you (the user) would like to use the arrow keys to go through each key generation or not.
 MANUAL_FLICK = False
 

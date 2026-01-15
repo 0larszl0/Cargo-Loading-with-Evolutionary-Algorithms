@@ -14,9 +14,9 @@ import random
 
 
 class Bin:
-    def __init__(self, max_weight: int):
+    def __init__(self, max_weight: float):
         self.__max_weight = max_weight
-        self.__weight = 0
+        self.__weight = 0.
         self.__cylinders = []
         self.__size = 0
 
@@ -28,8 +28,12 @@ class Bin:
         return self.__cylinders
 
     @property
-    def weight(self) -> int:
+    def weight(self) -> float:
         return self.__weight
+
+    @property
+    def max_weight(self) -> float:
+        return self.__max_weight
 
     def size(self) -> int:
         return self.__size
@@ -49,7 +53,7 @@ class Bin:
 
 
 class Bins:
-    def __init__(self, max_weight):
+    def __init__(self, max_weight: float):
         self.__max_weight = max_weight
         self.__bins = [Bin(max_weight)]
         self.__total_bins = 1
@@ -419,8 +423,10 @@ class Population:
             "Compute Time": time_taken,
             "Population Size": self.__size,
             "Binned Cylinders": sub(r"\033\[[0-9]*m", '', '\n'.join(['\t'.join(str(cylinder).split('\t')[:1] + str(cylinder).split('\t')[2:]) for cylinder in self.__bins.bins[bin_focus].cylinders])),
+            "Max Weight": self.__bins.bins[bin_focus].max_weight,
 
             "Best Cylinder Group": {
+                "Weight": self.__best_cylinder_group.weight,
                 "Fitness": self.__best_cylinder_group.fitness(),
                 "Cylinder Positions": sub(r"\033\[[0-9]*m", '', '\n'.join(['\t'.join(str(cylinder).split('\t')[:2]) for cylinder in self.__best_cylinder_group.cylinders])),
             },
