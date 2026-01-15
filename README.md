@@ -1,6 +1,6 @@
 <div align="center">
-    <img src="_ANIMATIONS/TEST_Instance[7]-Bin[0]-SMU[tournament]-CTU[spc]-MR[0.1]-SLIDING[False].gif" alt="Gif of Test Instance 7, without sliding enabled" width="49%">
-    <img src="_ANIMATIONS/TEST_Instance[7]-Bin[0]-SMU[tournament]-CTU[spc]-MR[0.1]-SLIDING[True].gif" alt="Gif of Test Instance 7, with sliding enabled" width="49%">
+    <img src="ANIMATIONS/TEST_Instance[7]-Bin[0]-SMU[tournament]-CTU[spc]-MR[0.1]-SLIDING[False].gif" alt="Gif of Test Instance 7, without sliding enabled" width="49%">
+    <img src="ANIMATIONS/TEST_Instance[7]-Bin[0]-SMU[tournament]-CTU[spc]-MR[0.1]-SLIDING[True].gif" alt="Gif of Test Instance 7, with sliding enabled" width="49%">
 </div>
 
 # Cargo Loading with Evolutionary Algorithms
